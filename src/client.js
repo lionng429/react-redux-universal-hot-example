@@ -22,15 +22,9 @@ const store = createStore(_browserHistory, client, window.__data);
 const history = syncHistoryWithStore(_browserHistory, store);
 
 function initSocket() {
-  const socket = io('', {path: '/ws'});
-  socket.on('news', (data) => {
-    console.log(data);
-    socket.emit('my other event', { my: 'data from client' });
-  });
-  socket.on('msg', (data) => {
-    console.log(data);
-  });
-
+  // cannot declare the socker events here
+  // as actions could not be dispatched
+  const socket = io('', { path: '/ws' });
   return socket;
 }
 
