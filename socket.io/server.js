@@ -7,8 +7,10 @@ import {
   ERROR,
 } from './events';
 
-const DEFAULT_CHANNEL = 'lobby';
+const DASHBOARD_CHANNEL = 'dashboard';
+const UPDATE_TIME_INTERVAL = 5 * 1000;
 
+// TODO: add unit test
 const getNativeQueues = new Promise((resolve, reject) => {
   // TODO: replace it with API request
   // mock the time taking request
@@ -55,13 +57,44 @@ const getNativeQueues = new Promise((resolve, reject) => {
 });
 
 export default io => {
-  // TODO: fetch and store the native queues
+  // fetch and store the native queues
   // upon socket.io server initialisation
+  // the socket.io server will keep refreshing the queues
+  // and broadcast to DASHBOARD_CHANNEL
+  let _queues = {};
+
+  function refreshQueues() {
+    getNativeQueues
+      .then(nativeQueues => {
+        // get and merge _queues with nativeQueues
+        return nativeQueues;
+      })
+      .then(computedQueues => {
+        // update the _queues variable
+        _queues = computedQueues;
+
+        io
+          .to(DASHBOARD_CHANNEL)
+          .emit(QUEUES_LOADED, computedQueues);
+      })
+      .catch(err => {
+        // TODO: to define a better socket error model
+        io
+          .to(DASHBOARD_CHANNEL)
+          .emit(ERROR, {
+            status: 500,
+            message: err.message,
+          });
+      });
+  }
+
+  // what if error occurred with the API?
+  // should set a maximum number of retry for setInterval
+  const queuesRefresh = setInterval(refreshQueues, UPDATE_TIME_INTERVAL);
 
   // using machine memory here
   // replace it with redis or something similar for scalability?
   const clients = [];
-  const queue = {};
 
   try {
     io.on('connection', socket => {
@@ -73,78 +106,85 @@ export default io => {
       // it's available from io / socket object
       clients.push(socket);
 
-      // join the default channel
-      // in order to receive broadcast message
-      // may not be necessary as io.emit can do
-      socket.join(DEFAULT_CHANNEL);
-
       // on dashboard mounted,
       // user needs the queues data,
       // send the computed queues as payload
       socket.on(DASHBOARD_MOUNTED, (user = {}) => {
         console.info(`event '${DASHBOARD_MOUNTED}' received from `, socketId);
 
-        getNativeQueues
-          .then(queues => {
-            console.info('queues obtained from API');
+        // subscribe the user with the DASHBOARD_CHANNEL
+        // so that the user will receive the updated queues broadcasting
+        socket.join(DASHBOARD_CHANNEL);
 
-            socket
-              .emit(QUEUES_LOADED, queues);
-          })
-          .catch(err => {
-            // TODO: to define a better socket error model
-            socket
-              .emit(ERROR, {
-                status: 500,
-                message: err.message,
-              });
-          });
+        // send the most updated queues on hand
+        // so the user does not have to wait for next broadcast
+        socket.emit(QUEUES_LOADED, _queues);
       });
 
       // requiring access to a resource
       socket.on(JOIN_RESOURCE, (data = {}) => {
-        const { resourceId, user } = data;
+        console.info(`event '${JOIN_RESOURCE}' received from `, socketId);
 
-        if (!user || !user.socketId) {
+        const { resourceId, user, timestamp } = data;
+
+        if (!user) {
+          console.error('user data is missing.');
+          socket.emit(ERROR, { status: 401 });
           return;
         }
 
         if (!resourceId) {
-          socket
-            .to(`/#${user.socketId}`)
-            .emit(ERROR, { status: 400 });
+          console.error('resourceId is missing.');
+          socket.emit(ERROR, { status: 400 });
           return;
         }
 
-        const occupied = !_.isEmpty(queue[resourceId]);
+        if (!timestamp) {
+          console.error('timestamp is missing.');
+          socket.emit(ERROR, { status: 400 });
+          return;
+        }
+
+        const resource = _.find(_queues, ({ resourcesToProgress }) => {
+          return _.find(resourcesToProgress, resource => resource === resourceId);
+        });
+
+        const occupied = _.find(_queues, ({ resourcesInProgress }) => {
+          return _.find(resourcesInProgress, resource => resource === resourceId);
+        });
 
         if (occupied) {
           // let the user know the resource is being occupied?
           return;
         }
 
-        const currentQueue = queue[resourceId];
+        // mutates the _queues object
+        // 1. push resourceInProgress
+        // 2. push processors
+        // 3. locker?
+        // 4. watcher?
 
-        // add user into a queue
-        currentQueue.push(user);
-
+        // subscribe the user with the RESOURCE_ID_CHANNEL
+        // so that the user will receive the related updates of resource
         socket.join(resourceId);
-        socket
-          .broadcast
-          .to(DEFAULT_CHANNEL)
-          .emit(REFRESH_RESOURCE, currentQueue);
+
+        // broadcast the real-time updates
+        // or let the 5s interval update do it?
       });
 
       // releasing access to a resource
       socket.on(LEAVE_RESOURCE, (resourceId, user) => {
-        // remove the user from memory queue
-        const currentQueue = _.remove(queue[resourceId], _user => _user.id === user.id);
+        // mutates the _queues object
+        // 1. push resourceInProgress
+        // 2. push processors
+        // 3. locker?
+        // 4. watcher?
 
+        // unsubscribe the user with the RESOURCE_ID_CHANNEL
         socket.leave(resourceId);
-        socket
-          .broadcast
-          .to(DEFAULT_CHANNEL)
-          .emit(REFRESH_RESOURCE, currentQueue)
+
+        // broadcast the real-time updates
+        // or let the 5s interval update do it?
       });
     });
 
