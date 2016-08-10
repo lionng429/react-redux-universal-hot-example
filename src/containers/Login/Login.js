@@ -15,8 +15,9 @@ export default class Login extends Component {
 
   handleSubmit = (event) => {
     event.preventDefault();
+    const { socket } = global;
     const input = this.refs.username;
-    this.props.login(input.value);
+    this.props.login(input.value, socket.id);
     input.value = '';
   }
 

@@ -3,14 +3,38 @@ import { Grid, Row, Col } from 'react-bootstrap';
 
 class Resource extends Component {
   render() {
+    const { id, locker, watchers, isLocked } = this.props;
+
     return (
       <Grid>
         <Row>
           <Col md={8}>
-            review by @
+            {
+              id && <p>resource #{id}</p>
+            }
+            {
+              locker && <p>review by @{locker.name}</p>
+            }
+            {
+              isLocked && <p>LOCKED</p>
+            }
           </Col>
           <Col md={4}>
-            locked by
+            {
+              locker && `locked by ${locker.name}`
+            }
+            {
+              watchers && (
+                <div>
+                  <p>watchers:</p>
+                  <ul>
+                    {
+                      watchers.map(watcher => <li>{watcher.name}</li>)
+                    }
+                  </ul>
+                </div>
+              )
+            }
           </Col>
         </Row>
       </Grid>
@@ -19,6 +43,9 @@ class Resource extends Component {
 }
 
 Resource.propTypes = {
+  id: PropTypes.string,
+  locker: PropTypes.object,
+  watchers: PropTypes.array,
   isLocked: PropTypes.bool.isRequired,
 };
 

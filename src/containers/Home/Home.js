@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import Helmet from 'react-helmet';
 import Dashboard from '../../components/Dashboard';
 import * as dashboardActions from '../../redux/modules/dashboard';
-import { DASHBOARD_MOUNTED, QUEUES_LOADED } from '../../../socket.io/events';
+import { JOIN_DASHBOARD, LEAVE_DASHBOARD, QUEUES_LOADED } from '../../../socket.io/events';
 
 @connect(
   state => ({ queues: state.dashboard.queues }),
@@ -25,10 +25,16 @@ export default class Home extends Component {
       'failed to establish websocket connection'
     );
 
-    socket.emit(DASHBOARD_MOUNTED);
+    socket.emit(JOIN_DASHBOARD);
 
     // how to prevent from re-declaration upon re-mount?
     socket.on(QUEUES_LOADED, this.handleQueuesLoaded);
+  }
+
+  componentWillUnmount() {
+    const { socket } = global;
+
+    socket.emit(LEAVE_DASHBOARD);
   }
 
   handleQueuesLoaded(queues) {

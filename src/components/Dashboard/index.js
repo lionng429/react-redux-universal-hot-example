@@ -1,4 +1,5 @@
 import React, { Component, PropTypes } from 'react';
+import { Link } from 'react-router';
 import {
   Grid, Row, Col
 } from 'react-bootstrap';
@@ -21,6 +22,7 @@ export default class Dashboard extends Component {
                     <strong>{queue.identifier}</strong><br />
                     remaining Items: {queue.remainingItems}<br />
                     processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
+                    <Link to={`/queue/${queue.identifier}`}>start process</Link>
                   </li>
               )}
             </ul>
@@ -34,20 +36,24 @@ export default class Dashboard extends Component {
                     <strong>{queue.identifier}</strong><br />
                     remaining Items: {queue.remainingItems}<br />
                     processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
+                    <Link to={`/queue/${queue.identifier}`}>start process</Link>
                   </li>
               )}
             </ul>
           </Col>
-          <h3>Customs</h3>
-          <ul>
-            {Object.values(queues).filter(queue => queue.type === 'native').map((queue, idx) =>
-                <li key={idx}>
-                  <strong>{queue.identifier}</strong><br />
-                  remaining Items: {queue.remainingItems}<br />
-                  processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
-                </li>
-            )}
-          </ul>
+          <Col md={6}>
+            <h3>Customs</h3>
+            <ul>
+              {Object.values(queues).filter(queue => queue.type === 'native').map((queue, idx) =>
+                  <li key={idx}>
+                    <strong>{queue.identifier}</strong><br />
+                    remaining Items: {queue.remainingItems}<br />
+                    processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
+                    <Link to={`/queue/${queue.identifier}`}>start process</Link>
+                  </li>
+              )}
+            </ul>
+          </Col>
           {
             /*
              <hr />

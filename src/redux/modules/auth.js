@@ -84,12 +84,13 @@ export function load() {
   };
 }
 
-export function login(name) {
+export function login(name, socketId) {
   return {
     types: [LOGIN, LOGIN_SUCCESS, LOGIN_FAIL],
     promise: (client) => client.post('/login', {
       data: {
-        name: name
+        name,
+        socketId,
       }
     })
   };
