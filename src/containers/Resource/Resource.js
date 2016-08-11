@@ -17,7 +17,10 @@ export default class ResourceContainer extends Component {
   constructor(props) {
     super(props);
 
+    this.joinResourceChannel = this.joinResourceChannel.bind(this);
+    this.leaveResourceChannel = this.leaveResourceChannel.bind(this);
     this.handleUpdateResource = this.handleUpdateResource.bind(this);
+    this.markAsProcessed = this.markAsProcessed.bind(this);
   }
 
   componentDidMount() {
@@ -28,43 +31,68 @@ export default class ResourceContainer extends Component {
       'failed to establish websocket connection'
     );
 
+    const { resource } = this.props;
+    this.joinResourceChannel(resource);
+
     socket.on(UPDATE_RESOURCE, this.handleUpdateResource);
   }
 
   componentDidUpdate(prevProps) {
     const { resource: prevResource } = prevProps;
-    const { resource, user } = this.props;
+    const { resource } = this.props;
 
     if (prevResource.id !== resource.id) {
       if (prevResource.id) {
-        socket.emit(LEAVE_RESOURCE, {
-          resource: prevResource,
-          user,
-        });
+        this.leaveResourceChannel(prevResource);
       }
 
       if (resource.id) {
-        socket.emit(JOIN_RESOURCE, {
-          resource,
-          user,
-          timestamp: new Date().getTime(),
-        });
+        this.joinResourceChannel(resource);
       }
     }
   }
 
   componentWillUnmount() {
-    const { resource, user } = this.props;
+    const { resource } = this.props;
 
     if (resource) {
-      socket.emit(LEAVE_RESOURCE, {
-        resource,
-        user,
-      });
+      this.leaveResourceChannel(resource);
     }
 
     // clear resource store
     this.handleUpdateResource({});
+  }
+
+  joinResourceChannel(resource) {
+    const { socket } = global;
+    const { user } = this.props;
+
+    if (Object.keys(resource).length > 0) {
+      socket.emit(JOIN_RESOURCE, {
+        resource,
+        user,
+        timestamp: new Date().getTime(),
+      });
+    }
+  }
+
+  leaveResourceChannel(resource) {
+    const { socket } = global;
+    const { user } = this.props;
+
+    if (Object.keys(resource).length > 0) {
+      socket.emit(LEAVE_RESOURCE, {
+        resource,
+        user,
+        timestamp: new Date().getTime(),
+      });
+    }
+  }
+
+  markAsProcessed() {
+    // emit a event to sync the state on ws server
+    const { markResourceAsProcessed, resource } = this.props;
+    markResourceAsProcessed(resource);
   }
 
   handleUpdateResource(resource) {
@@ -83,6 +111,7 @@ export default class ResourceContainer extends Component {
           <Resource
             {...resource}
             isLocked={locker && locker.name !== user.name}
+            markResourceAsProcessed={this.markResourceAsProcessed}
           />
         </div>
       </div>
@@ -95,4 +124,5 @@ ResourceContainer.propTypes = {
   user: PropTypes.object,
   resource: PropTypes.object,
   updateResource: PropTypes.func.isRequired,
+  markResourceAsProcessed: PropTypes.func.isRequired,
 };

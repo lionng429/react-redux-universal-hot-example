@@ -1,12 +1,12 @@
 import React, { Component, PropTypes } from 'react';
-import { Link } from 'react-router';
+import StartProcessButton from './StartProcessButton';
 import {
   Grid, Row, Col
 } from 'react-bootstrap';
 
 export default class Dashboard extends Component {
   render() {
-    const { queues } = this.props;
+    const { queues, user, handleSelectQueue } = this.props;
 
     return (
       <Grid>
@@ -22,7 +22,14 @@ export default class Dashboard extends Component {
                     <strong>{queue.identifier}</strong><br />
                     remaining Items: {queue.remainingItems}<br />
                     processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
-                    <Link to={`/queue/${queue.identifier}`}>start process</Link>
+                    {
+                      user && (
+                        <StartProcessButton
+                          queueId={queue.identifier}
+                          handleSelectQueue={handleSelectQueue}
+                        />
+                      )
+                    }
                   </li>
               )}
             </ul>
@@ -36,7 +43,14 @@ export default class Dashboard extends Component {
                     <strong>{queue.identifier}</strong><br />
                     remaining Items: {queue.remainingItems}<br />
                     processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
-                    <Link to={`/queue/${queue.identifier}`}>start process</Link>
+                    {
+                      user && (
+                        <StartProcessButton
+                          queueId={queue.identifier}
+                          handleSelectQueue={handleSelectQueue}
+                        />
+                      )
+                    }
                   </li>
               )}
             </ul>
@@ -49,7 +63,14 @@ export default class Dashboard extends Component {
                     <strong>{queue.identifier}</strong><br />
                     remaining Items: {queue.remainingItems}<br />
                     processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
-                    <Link to={`/queue/${queue.identifier}`}>start process</Link>
+                    {
+                      user && (
+                        <StartProcessButton
+                          queueId={queue.identifier}
+                          handleSelectQueue={handleSelectQueue}
+                        />
+                      )
+                    }
                   </li>
               )}
             </ul>
@@ -73,4 +94,6 @@ export default class Dashboard extends Component {
 
 Dashboard.propTypes = {
   queues: PropTypes.object.isRequired,
+  user: PropTypes.object.isRequired,
+  handleSelectQueue: PropTypes.func.isRequired,
 };

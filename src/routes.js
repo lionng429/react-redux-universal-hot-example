@@ -11,7 +11,7 @@ import {
   LoginSuccess,
   Survey,
   NotFound,
-  Queue,
+  Resource,
 } from 'containers';
 
 export default (store) => {
@@ -51,7 +51,7 @@ export default (store) => {
       <Route path="login" component={Login}/>
       <Route path="survey" component={Survey}/>
       <Route path="widgets" component={Widgets}/>
-      <Route path="queue/:queueId" component={Queue} />
+      <Route path="resources/:type/:id" component={Resource} />
 
       { /* Catch all route */ }
       <Route path="*" component={NotFound} status={404} />

@@ -8,4 +8,4 @@ export LoginSuccess from './LoginSuccess/LoginSuccess';
 export Survey from './Survey/Survey';
 export NotFound from './NotFound/NotFound';
 export Resource from './Resource/Resource';
-export Queue from './Queue/Queue';
+export Toolbar from './Toolbar/Toolbar';

@@ -7,7 +7,10 @@ import {
   JOIN_RESOURCE,
   LEAVE_RESOURCE,
   QUEUES_LOADED,
+  ASSIGN_RESOURCE,
   UPDATE_RESOURCE,
+  GET_LAST_RESOURCE,
+  GET_NEXT_RESOURCE,
   ERROR,
 } from './events';
 
@@ -54,23 +57,33 @@ function getResourcesFromEndpoint(endpoint) {
       resolve({
         collection: [
           {
+            type: 'entry',
             id: '12345-67890',
+            name: 'Resource 1',
             status: 'pending',
           },
           {
+            type: 'external_entry',
             id: '23456-78901',
+            name: 'Resource 2',
             status: 'pending',
           },
           {
+            type: 'external_entry',
             id: '34567-89012',
+            name: 'Resource 3',
             status: 'in_resolution_process',
           },
           {
+            type: 'entry',
             id: '45678-90123',
+            name: 'Resource 4',
             status: 'rejected',
           },
           {
+            type: 'entry',
             id: '56789-01234',
+            name: 'Resource 5',
             status: 'approved',
           },
         ],
@@ -209,6 +222,8 @@ export default io => {
 
         socket.join(`queue#${queueId}`);
 
+        clients[socketId].queue = queueId;
+
         // add processor to _queues
         _.update(_queues, `${queueId}.processors`, processors => {
           processors.push(user);
@@ -225,7 +240,7 @@ export default io => {
         const resource = resources && _.first(resources);
 
         socket
-          .emit(UPDATE_RESOURCE, resource);
+          .emit(ASSIGN_RESOURCE, resource);
       });
 
       socket.on(LEAVE_QUEUE, (data = {}) => {
@@ -235,6 +250,8 @@ export default io => {
 
         socket.leave(`queue#${queueId}`);
 
+        clients[socketId].queue = null;
+
         // remove processor from _queues
         _.update(_queues, `${queueId}.processors`, processors => processors.filter(processor => processor.name !== user.name));
 
@@ -242,6 +259,75 @@ export default io => {
         io
           .to(DASHBOARD_CHANNEL)
           .emit(QUEUES_LOADED, _queues);
+      });
+
+      socket.on(GET_LAST_RESOURCE, (data = {}) => {
+        console.info(`event '${GET_LAST_RESOURCE}' received from ${socketId}`);
+
+        const { user, timestamp } = data;
+
+        const queueId = clients[socketId].queue;
+
+        if (!queueId) {
+          console.error(`user with ${socketId} is not in any queue process`);
+          return;
+        }
+
+        const currentResource = clients[socketId].resource;
+        const pendingResources = _.filter(_.get(_queues, `${queueId}.resources`), resource => resource.status === 'pending');
+        let resource;
+
+        if (!currentResource) {
+          resource = _.head(pendingResources);
+        } else {
+          const index = _.findIndex(pendingResources, resource => resource.id === currentResource.id);
+
+          let nextIndex = index - 1;
+
+          if (nextIndex < 0) {
+            nextIndex = pendingResources.length - 1;
+          }
+
+          resource = pendingResources[nextIndex];
+        }
+
+        socket
+          .emit(ASSIGN_RESOURCE, resource);
+      });
+
+      socket.on(GET_NEXT_RESOURCE, (data = {}) => {
+        console.info(`event '${GET_NEXT_RESOURCE}' received from ${socketId}`);
+
+        const { user, timestamp } = data;
+
+        const queueId = clients[socketId].queue;
+
+        if (!queueId) {
+          console.error(`user with ${socketId} is not in any queue process`);
+          return;
+        }
+
+        const currentResource = clients[socketId].resource;
+        const pendingResources = _.filter(_.get(_queues, `${queueId}.resources`), resource => resource.status === 'pending');
+
+        let resource;
+
+        if (!currentResource) {
+          resource = _.head(pendingResources);
+        } else {
+          const index = _.findIndex(pendingResources, resource => resource.id === currentResource.id);
+
+          let nextIndex = index + 1;
+
+          if (nextIndex >= pendingResources.length) {
+            nextIndex = 0;
+          }
+
+          resource = pendingResources[nextIndex];
+        }
+
+        socket
+          .emit(ASSIGN_RESOURCE, resource);
       });
 
       // requiring access to a resource
@@ -302,6 +388,8 @@ export default io => {
 
       // releasing access to a resource
       socket.on(LEAVE_RESOURCE, (data = {}) => {
+        console.info(`event '${LEAVE_RESOURCE}' received from ${socketId}`);
+
         const { resource, user } = data;
         const { queueId, id: resourceId } = resource;
 

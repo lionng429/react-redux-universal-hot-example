@@ -10,6 +10,7 @@ import info from './info';
 import widgets from './widgets';
 import dashboard from './dashboard';
 import resource from './resource';
+import queue from './queue';
 
 export default combineReducers({
   routing: routerReducer,
@@ -25,4 +26,5 @@ export default combineReducers({
   widgets,
   dashboard,
   resource,
+  queue,
 });
