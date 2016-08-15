@@ -6,7 +6,7 @@ import {
 
 export default class Dashboard extends Component {
   render() {
-    const { queues, user, handleSelectQueue } = this.props;
+    const { currentQueueId, queues, user, handleSelectQueue } = this.props;
 
     return (
       <Grid>
@@ -23,7 +23,7 @@ export default class Dashboard extends Component {
                     remaining Items: {queue.remainingItems}<br />
                     processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
                     {
-                      user && (
+                      (user && currentQueueId !== queue.identifier) && (
                         <StartProcessButton
                           queueId={queue.identifier}
                           handleSelectQueue={handleSelectQueue}
@@ -44,7 +44,7 @@ export default class Dashboard extends Component {
                     remaining Items: {queue.remainingItems}<br />
                     processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
                     {
-                      user && (
+                      (user && currentQueueId !== queue.identifier) && (
                         <StartProcessButton
                           queueId={queue.identifier}
                           handleSelectQueue={handleSelectQueue}
@@ -64,7 +64,7 @@ export default class Dashboard extends Component {
                     remaining Items: {queue.remainingItems}<br />
                     processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
                     {
-                      user && (
+                      (user && currentQueueId !== queue.identifier) && (
                         <StartProcessButton
                           queueId={queue.identifier}
                           handleSelectQueue={handleSelectQueue}
@@ -93,6 +93,7 @@ export default class Dashboard extends Component {
 }
 
 Dashboard.propTypes = {
+  currentQueueId: PropTypes.string,
   queues: PropTypes.object.isRequired,
   user: PropTypes.object.isRequired,
   handleSelectQueue: PropTypes.func.isRequired,

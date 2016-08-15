@@ -1,35 +1,28 @@
-// import invariant from 'invariant';
+import isEmpty from 'lodash/isEmpty';
 import React, { Component, PropTypes } from 'react';
 import { browserHistory } from 'react-router';
 import { connect } from 'react-redux';
-import {
-  Navbar, Nav, NavDropdown, MenuItem, NavItem,
-  ButtonToolbar, ButtonGroup,
-  Input,
-  Button,
-  Glyphicon,
-  OverlayTrigger,
-  Popover,
-} from 'react-bootstrap';
 import * as queueActions from '../../redux/modules/queue';
 import * as resourceActions from '../../redux/modules/resource';
+import Toolbar from '../../components/Toolbar';
 import {
   JOIN_QUEUE,
   LEAVE_QUEUE,
   ASSIGN_RESOURCE,
-  GET_LAST_RESOURCE,
+  SKIP_RESOURCE,
   GET_NEXT_RESOURCE,
-} from '../../../socket.io/events';
+} from '../../../queueSystem/events';
 
 @connect(
   state => ({
     user: state.auth.user,
     queueId: state.queue.queueId,
+    numOfPendingItems: state.queue.numOfPendingItems,
     resource: state.resource.resource,
   }),
   {
     ...resourceActions,
-    ...queueActions
+    ...queueActions,
   }
 )
 export default class ToolbarContainer extends Component {
@@ -37,8 +30,8 @@ export default class ToolbarContainer extends Component {
     super(props);
 
     this.handleLeaveQueue = this.handleLeaveQueue.bind(this);
-    this.handleGetLastResource = this.handleGetLastResource.bind(this);
     this.handleGetNextResource = this.handleGetNextResource.bind(this);
+    this.handleSkipResource = this.handleSkipResource.bind(this);
   }
 
   componentDidMount() {
@@ -78,19 +71,13 @@ export default class ToolbarContainer extends Component {
     }
   }
 
+  componentWillUnmount() {
+    this.props.resetQueue();
+  }
+
   handleLeaveQueue() {
     const { selectQueue } = this.props;
     selectQueue(null);
-  }
-
-  handleGetLastResource() {
-    const { socket } = global;
-    const { user } = this.props;
-
-    socket.emit(GET_LAST_RESOURCE, {
-      user,
-      timestamp: new Date().getTime(),
-    });
   }
 
   handleGetNextResource() {
@@ -103,48 +90,36 @@ export default class ToolbarContainer extends Component {
     });
   }
 
-  render() {
-    const { queueId, resource } = this.props;
+  handleSkipResource() {
+    const { socket } = global;
+    const { user } = this.props;
 
-    return !!queueId ? (
-      <Navbar fixedBottom>
-        <Nav>
-          <NavDropdown id="current-user-dropdown" eventKey={0} title="@Joris">
-            <MenuItem eventKey="1">Settings</MenuItem>
-            <MenuItem eventKey="2">Statistics</MenuItem>
-          </NavDropdown>
-        </Nav>
-        <Nav>
-          <li className="navbar-form">
-            <Input type="text" size={30} placeholder="" buttonAfter={<Button bsStyle="success" type="submit">Search</Button>}/>
-          </li>
-        </Nav>
-        <Nav>
-          <NavItem eventKey={7} href="#">
-            {
-              Object.keys(resource).length > 0 && (
-                <OverlayTrigger trigger={['hover', 'focus']} placement="top" overlay={<Popover id="bottom-nav-current-submission" title="Popover top"><strong>Holy guacamole!</strong> Check this info.</Popover>}>
-                  <span><Glyphicon glyph="lock" /> Current Review: <strong>{resource.name} @johnny_777</strong></span>
-                </OverlayTrigger>
-              )
-            }
-          </NavItem>
-        </Nav>
-        <Nav pullRight>
-          <li className="navbar-form">
-            <ButtonToolbar>
-              <ButtonGroup>
-                <Button bsStyle="link" onClick={this.handleGetLastResource}><Glyphicon glyph="chevron-left" /></Button>
-                <Button bsStyle="link">Require Attention</Button>
-                <Button bsStyle="link" onClick={this.handleGetNextResource}><Glyphicon glyph="chevron-right" /></Button>
-                <Button bsStyle="link" onClick={this.handleLeaveQueue}><Glyphicon glyph="stop" /></Button>
-              </ButtonGroup>
-            </ButtonToolbar>
-          </li>
-        </Nav>
-      </Navbar>
-    ) : (
-      <Navbar fixedBottom />
+    socket.emit(SKIP_RESOURCE, {
+      user,
+      timestamp: new Date().getTime(),
+    });
+  }
+
+  render() {
+    const {
+      queueId,
+      numOfPendingItems,
+      resource,
+      onResourcePage,
+    } = this.props;
+
+    const isLastResource = numOfPendingItems === 0;
+
+    return (
+      <Toolbar
+        isEmpty={!queueId}
+        resource={resource}
+        hasGoToResourceButton={!onResourcePage}
+        hasSkipButton={!isEmpty(resource) && !isLastResource}
+        handleGoToResource={this.handleGetNextResource}
+        handleLeaveQueue={this.handleLeaveQueue}
+        handleSkipResource={this.handleSkipResource}
+      />
     );
   }
 }
@@ -153,6 +128,9 @@ ToolbarContainer.propTypes = {
   queueId: PropTypes.string,
   resource: PropTypes.object,
   user: PropTypes.object,
+  numOfPendingItems: PropTypes.number,
+  onResourcePage: PropTypes.bool,
+  resetQueue: PropTypes.func.isRequired,
   selectQueue: PropTypes.func.isRequired,
   updateResource: PropTypes.func.isRequired,
 };

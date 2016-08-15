@@ -24,11 +24,14 @@ const history = syncHistoryWithStore(_browserHistory, store);
 function initSocket() {
   // cannot declare the socker events here
   // as actions could not be dispatched
-  const socket = io('', { path: '/ws' });
-  return socket;
+  const socket = io('', { path: '/ws/queue' });
+  const lockSysSocket = io('', { path: '/ws/lock' });
+
+  global.socket = socket;
+  global.lockSysSocket = lockSysSocket;
 }
 
-global.socket = initSocket();
+initSocket();
 
 const component = (
   <Router render={(props) =>

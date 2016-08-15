@@ -32,6 +32,7 @@ import { Toolbar } from '../index';
   {logout, pushState: push})
 export default class App extends Component {
   static propTypes = {
+    location: PropTypes.object.isRequired,
     children: PropTypes.object.isRequired,
     user: PropTypes.object,
     logout: PropTypes.func.isRequired,
@@ -58,8 +59,10 @@ export default class App extends Component {
   };
 
   render() {
-    const {user} = this.props;
+    const { user, location } = this.props;
     const styles = require('./App.scss');
+    // TODO: determine if there is a better way to define if a user is on resource page
+    const onResourcePage = /^\/resources\/([\w\/$]*)\/([^&\/$]*)/g.test(location.pathname);
 
     return (
       <div className={styles.app}>
@@ -116,7 +119,7 @@ export default class App extends Component {
           {this.props.children}
         </div>
 
-        <Toolbar />
+        <Toolbar onResourcePage={onResourcePage} />
       </div>
     );
   }

@@ -46,7 +46,7 @@ Resource.propTypes = {
   id: PropTypes.string,
   locker: PropTypes.object,
   watchers: PropTypes.array,
-  isLocked: PropTypes.bool.isRequired,
+  isLocked: PropTypes.bool,
 };
 
 export default Resource;

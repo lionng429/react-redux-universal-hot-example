@@ -6,11 +6,13 @@ import {
   LEAVE_QUEUE,
   JOIN_RESOURCE,
   LEAVE_RESOURCE,
+  SWITCH_RESOURCE,
   QUEUES_LOADED,
   ASSIGN_RESOURCE,
   UPDATE_RESOURCE,
   GET_LAST_RESOURCE,
   GET_NEXT_RESOURCE,
+  SKIP_RESOURCE,
   ERROR,
 } from './events';
 
@@ -328,6 +330,31 @@ export default io => {
 
         socket
           .emit(ASSIGN_RESOURCE, resource);
+      });
+
+      socket.on(SKIP_RESOURCE, (data = {}) => {
+        // get user by socketId
+        // const user = Users.getUserBySocketId(socketId);
+
+        // const currentResource = user.getCurrentResource();
+
+        // get pending resource of the queue
+        // const pendingResources = _.filter(resources[currentResource.queueId], resource => resource.status === 'pending');
+
+        // find current index
+        // const index = _.findIndex(pendingResources, resource => resource.id === currentResource.id);
+
+        // get next index
+        // const nextIndex = index + 1;
+
+        // if nextIndex > pendingResources.length
+        // fetch new pending resource?
+        // return no more resources?
+
+        // resource = pendingResource[nextIndex];
+
+        // assign new resource
+        // socket.on(SKIP_RESOURCE, resource);
       });
 
       // requiring access to a resource

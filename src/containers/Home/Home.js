@@ -5,10 +5,11 @@ import Helmet from 'react-helmet';
 import Dashboard from '../../components/Dashboard';
 import * as dashboardActions from '../../redux/modules/dashboard';
 import { selectQueue } from '../../redux/modules/queue';
-import { JOIN_DASHBOARD, LEAVE_DASHBOARD, QUEUES_LOADED } from '../../../socket.io/events';
+import { JOIN_DASHBOARD, LEAVE_DASHBOARD, QUEUES_LOADED } from '../../../queueSystem/events';
 
 @connect(
   state => ({
+    queueId: state.queue.queueId,
     queues: state.dashboard.queues,
     user: state.auth.user,
   }),
@@ -50,13 +51,14 @@ export default class Home extends Component {
   }
 
   render() {
-    const { queues, user, selectQueue: handleSelectQueue } = this.props;
+    const { queueId, queues, user, selectQueue: handleSelectQueue } = this.props;
     const styles = require('./Home.scss');
     return (
       <div className={styles.home}>
         <Helmet title="Home"/>
         <div className="container">
           <Dashboard
+            currentQueueId={queueId}
             queues={queues}
             user={user}
             handleSelectQueue={handleSelectQueue}
@@ -68,6 +70,7 @@ export default class Home extends Component {
 }
 
 Home.propTypes = {
+  queueId: PropTypes.string,
   queues: PropTypes.object.isRequired,
   user: PropTypes.object.isRequired,
   loadedQueues: PropTypes.func.isRequired,

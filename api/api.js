@@ -13,8 +13,8 @@ const app = express();
 
 const server = new http.Server(app);
 
-const io = new SocketIo(server);
-io.path('/ws');
+const io = new SocketIo(server).path('/ws/queue');
+const lockIo = new SocketIo(server).path('/ws/lock');
 
 app.use(session({
   secret: 'react and redux rule!!!!',
@@ -65,7 +65,7 @@ if (config.apiPort) {
     console.info('==> 💻  Send requests to http://%s:%s', config.apiHost, config.apiPort);
   });
 
-  const socketEvents = require('../socket.io/server')(io);
+  const socketEvents = require('../queueSystem/server')(io);
 
   io.listen(runnable);
 } else {
