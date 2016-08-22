@@ -1,5 +1,5 @@
 const UPDATE_SELECTED_QUEUE = 'UPDATE_SELECTED_QUEUE';
-const UPDATE_NUMBER_OF_PENDING_ITEMS = 'UPDATE_NUMBER_OF_PENDING_ITEMS';
+const UPDATE_QUEUE = 'UPDATE_QUEUE';
 const RESET_QUEUE = 'RESET_QUEUE';
 
 const initialState = {
@@ -16,10 +16,10 @@ export default function reducer(state = initialState, action = {}) {
         numOfPendingItems: 0,
       };
 
-    case UPDATE_NUMBER_OF_PENDING_ITEMS:
+    case UPDATE_QUEUE:
       return {
         ...state,
-        numOfPendingItems: state.queueId === action.queueId ? action.numOfPendingItems : state.numOfPendingItems,
+        numOfPendingItems: action.queue.numOfPendingItems,
       };
 
     case RESET_QUEUE:
@@ -37,11 +37,10 @@ export function selectQueue(queueId) {
   };
 }
 
-export function updateNumOfPendingItemsById(queueId, numOfPendingItems) {
+export function updateQueue(queue) {
   return {
-    type: UPDATE_NUMBER_OF_PENDING_ITEMS,
-    queueId,
-    numOfPendingItems,
+    type: UPDATE_QUEUE,
+    queue,
   };
 }
 

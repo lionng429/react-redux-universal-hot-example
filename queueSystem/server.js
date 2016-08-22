@@ -1,3 +1,6 @@
+import { createStore } from 'redux';
+import appReducer from './reducer';
+import * as actions from './actions';
 import _ from 'lodash';
 import {
   JOIN_DASHBOARD,
@@ -7,7 +10,6 @@ import {
   JOIN_RESOURCE,
   LEAVE_RESOURCE,
   ASSIGN_RESOURCE,
-  GET_LAST_RESOURCE,
   GET_NEXT_RESOURCE,
   SKIP_RESOURCE,
   FETCH_RESOURCES,
@@ -20,32 +22,11 @@ import {
   LOGIN,
   ERROR,
 } from './events';
-
-const DASHBOARD_CHANNEL = 'dashboard';
-const UPDATE_TIME_INTERVAL = 5 * 1000;
-
-const nativeQueues = [
-  {
-    identifier: 'new_reviews',
-    type: 'native',
-    endPoint: 'reviews/approvalQueue',
-  },
-  {
-    identifier: 'new_comments',
-    type: 'native',
-    endPoint: 'comments/approvalQueue',
-  },
-  {
-    identifier: 'new_questions',
-    type: 'native',
-    endPoint: 'questions/approvalQueue',
-  },
-  {
-    identifier: 'new_answers',
-    type: 'native',
-    endPoint: 'answers/approvalQueue',
-  },
-];
+import {
+  DASHBOARD_CHANNEL,
+  UPDATE_TIME_INTERVAL,
+  nativeQueues,
+} from './constants';
 
 // TODO: add unit test
 function getResourcesFromEndpoint(queueId, endpoint) {
@@ -114,22 +95,12 @@ function getResourcesFromEndpoint(queueId, endpoint) {
 }
 
 export default io => {
+  let store = createStore(appReducer);
+
   // fetch and store the native queues
   // upon socket.io server initialisation
   // the socket.io server will keep refreshing the queues
   // and broadcast to DASHBOARD_CHANNEL
-  let state = {
-    clients: [],
-    queues: nativeQueues.map((queue = {}) => Object.assign({}, {
-      type: queue.type,
-      id: queue.identifier,
-      remainingItems: 0,
-      processors: [],
-    })),
-    resources: [],
-    processedResources: [],
-  };
-
   function refreshQueues() {
     Promise
       .all(nativeQueues.map((queue = {}) => {
@@ -174,7 +145,8 @@ export default io => {
           return data;
         }, { resources: [] });
 
-        state = reducer(state, FETCH_RESOURCES, newData);
+        store.dispatch(actions.fetchResources(newData));
+        const state = store.getState();
 
         // broadcast the updated queues to DASHBOARD_CHANNEL
         io
@@ -183,8 +155,10 @@ export default io => {
 
         // broadcast the updated queue to QUEUE_CHANNEL
         queueIds.forEach(queueId => {
-          io.to(getQueueChannel(queueId)).emit(REFRESH_QUEUE, state.queues.find(queue => queue.id === queueId));
-        })
+          io.to(getQueueChannel(queueId)).emit(REFRESH_QUEUE, Object.assign({}, state.queues.find(queue => queue.id === queueId), {
+            numOfPendingItems: state.resources.filter(resource => resource.queueId === queueId && !state.processedResources.includes(resource.id)).length,
+          }));
+        });
       })
       .catch(err => {
         console.error('error occurred when fetching resources', err);
@@ -211,88 +185,6 @@ export default io => {
     return `queue#${queueId}`;
   }
 
-  function reducer(state, event, data = {}) {
-    const user = Object.assign({}, state.clients.find(client => client.socketId === data.socketId));
-
-    switch (event) {
-      case LOGIN:
-        return {
-          ...state,
-          clients: state.clients.concat([{
-            socketId: data.socketId,
-            id: data.id,
-            name: data.name,
-            queueId: null,
-            resourceId: null,
-          }]),
-        };
-
-      case JOIN_QUEUE:
-        return {
-          ...state,
-          clients: state.clients.map(client => client.socketId !== user.socketId ? client : Object.assign(user, { queueId: data.queueId })),
-          queues: state.queues.map(queue => queue.id !== data.queueId ? queue : Object.assign({}, queue, {
-            processors: queue.processors.concat([user]),
-          })),
-        };
-
-      case LEAVE_QUEUE:
-        return {
-          ...state,
-          clients: state.clients.map(client => client.socketId !== user.socketId ? client : Object.assign({}, user, { queueId: null })),
-          queues: state.queues.map(queue => queue.id !== user.queueId ? queue : Object.assign({}, queue, {
-            processors: queue.processors.filter(processor => processor.socketId !== user.socketId),
-          })),
-        };
-
-      case FETCH_RESOURCES:
-        return {
-          ...state,
-          queues: state.queues.map(queue => Object.assign({}, queue, {
-            remainingItems: data[queue.id].remainingItems
-          })),
-          resources: state.resources.concat(data.resources.filter(resource => !state.resources.map(resource => resource.id).includes(resource.id))),
-        };
-
-      case JOIN_RESOURCE:
-        return {
-          ...state,
-          clients: state.clients.map(client => client.socketId !== user.socketId ? client : Object.assign(user, { resourceId: data.resourceId })),
-          resources: state.resources.map(resource => resource.id !== data.resourceId ? resource : Object.assign({}, resource, {
-            watchers: resource.watchers.concat([user])
-          })),
-        };
-
-      case LEAVE_RESOURCE:
-        return {
-          ...state,
-          clients: state.clients.map(client => client.socketId !== user.socketId ? client : Object.assign({}, user, { resourceId: null })),
-          resources: state.resources.map(resource => resource.id !== user.resourceId ? resource : Object.assign({}, resource, {
-            watchers: resource.watchers.filter(watcher => watcher.socketId !== user.socketId),
-          })),
-        };
-
-      case DISCONNECT:
-        return {
-          ...state,
-          clients: state.clients.filter(client => client.socketId !== user.socketId),
-          queues: !(user && user.resourceId) ? state.queues : state.queues.map(queue => queue.id !== user.queueId ? queue : Object.assign({}, queue, {
-            processors: queue.processors.filter(processor => processor.socketId !== user.socketId),
-          })),
-          resources: !(user && user.resourceId) ? state.resources : state.resources.map(resource => resource.id !== user.resourceId ? resource : Object.assign({}, resource, {
-            watchers: resource.watchers.filter(watcher => watcher.socketId !== user.socketId),
-          })),
-        };
-
-      default:
-        return state;
-    }
-  }
-
-  function getQueues() {
-
-  }
-
   try {
     io.on(CONNECTION, socket => {
       console.info(`socket.io connection ID: ${socket.conn.id} established from ${socket.handshake.address}`);
@@ -304,7 +196,10 @@ export default io => {
 
         // verify the user via PHP API
 
-        state = reducer(state, LOGIN, { socketId, ...user });
+        store.dispatch(actions.login({
+          socketId,
+          ...user,
+        }));
       });
 
       // on dashboard mounted,
@@ -312,6 +207,8 @@ export default io => {
       // send the computed queues as payload
       socket.on(JOIN_DASHBOARD, (user = {}) => {
         console.info(`event '${JOIN_DASHBOARD}' received from ${socketId}`);
+
+        const state = store.getState();
 
         socket.join(DASHBOARD_CHANNEL);
         socket.emit(REFRESH_QUEUES, state.queues);
@@ -326,6 +223,7 @@ export default io => {
       socket.on(JOIN_QUEUE, (data = {}) => {
         console.info(`event '${JOIN_QUEUE}' received from ${socketId}`);
 
+        const state = store.getState();
         const { queueId: currentQueueId } = state.clients.find((client = {}) => client.socketId === socketId) || {};
         const { queueId } = data;
 
@@ -343,13 +241,16 @@ export default io => {
         // assuming a client cannot process two queues at the same time
         if (currentQueueId) {
           socket.leave(getQueueChannel(currentQueueId), () => {
-            state = reducer(state, LEAVE_QUEUE, { socketId });
+            store.dispatch(actions.leaveQueue({ socketId, queueId }));
+            const state = store.getState();
+
             io.to(DASHBOARD_CHANNEL).emit(REFRESH_QUEUES, state.queues);
           });
         }
 
         socket.join(getQueueChannel(queueId), () => {
-          state = reducer(state, JOIN_QUEUE, { socketId, queueId });
+          store.dispatch(actions.joinQueue({ socketId, queueId }));
+          const state = store.getState();
 
           io.to(DASHBOARD_CHANNEL).emit(REFRESH_QUEUES, state.queues);
 
@@ -364,6 +265,7 @@ export default io => {
       socket.on(LEAVE_QUEUE, () => {
         console.info(`event '${LEAVE_QUEUE}' received from ${socketId}`);
 
+        const state = store.getState();
         const { queueId } = state.clients.find((client = {}) => client.socketId === socketId) || {};
 
         if (!queueId) {
@@ -372,19 +274,18 @@ export default io => {
         }
 
         socket.leave(getQueueChannel(queueId), () => {
-          state = reducer(state, LEAVE_QUEUE, { socketId });
+          store.dispatch(actions.leaveQueue({ socketId }));
+          const state = store.getState();
+          // state = reducer(state, LEAVE_QUEUE, { socketId });
 
           io.to(DASHBOARD_CHANNEL).emit(REFRESH_QUEUES, state.queues);
         });
       });
 
-      socket.on(GET_LAST_RESOURCE, (data = {}) => {
-        console.info(`event '${GET_LAST_RESOURCE}' received from ${socketId}`);
-      });
-
       socket.on(GET_NEXT_RESOURCE, (data = {}) => {
         console.info(`event '${GET_NEXT_RESOURCE}' received from ${socketId}`);
 
+        const state = store.getState();
         const { queueId } = state.clients.find((client = {}) => client.socketId === socketId) || {};
 
         if (!queueId) {
@@ -399,8 +300,9 @@ export default io => {
       });
 
       socket.on(SKIP_RESOURCE, (data = {}) => {
-        console.info(`event '${GET_NEXT_RESOURCE}' received from ${socketId}`);
+        console.info(`event '${SKIP_RESOURCE}' received from ${socketId}`);
 
+        const state = store.getState();
         const { queueId, resourceId } = state.clients.find((client = {}) => client.socketId === socketId) || {};
 
         if (!queueId) {
@@ -420,11 +322,21 @@ export default io => {
 
         const currentIndex = pendingResources.findIndex(resource => resource.id === resourceId);
 
-        const nextResource = currentIndex < pendingResources.length - 1 && nextResource > -1 ? pendingResources[currentIndex + 1] : {};
+        // if there is no more pending resources
+        // return an empty resource
+        let nextResource = {};
 
-        socket.emit(ASSIGN_RESOURCE, nextResource, () => {
-          io.to(getResourceChannel(resourceId)).emit(REFRESH_RESOURCE, state.resources.find((resource = {}) => resource.id === resourceId));
-        });
+        // unknown current index, assign the first
+        if (pendingResources.length > 0) {
+          if (currentIndex === -1 || currentIndex >= pendingResources.length - 1) {
+            nextResource = pendingResources[0];
+          } else if (currentIndex < pendingResources.length - 1) {
+            nextResource = pendingResources[currentIndex + 1];
+          }
+        }
+
+        // no state change in this process, so no need to broadcast changes
+        socket.emit(ASSIGN_RESOURCE, nextResource);
       });
 
       // requiring access to a resource
@@ -432,22 +344,30 @@ export default io => {
         console.info(`event '${JOIN_RESOURCE}' received from ${socketId}`);
 
         // TODO: store.getClientBySocketId(socketId)
+        const state = store.getState();
         const { resourceId: currentResourceId } = state.clients.find((client = {}) => client.socketId === socketId) || {};
+        const { resourceId } = data;
+
+        // if the user requested to join the same resource,
+        // no action is required
+        if (currentResourceId === resourceId) {
+          return;
+        }
 
         if (currentResourceId) {
+          store.dispatch(actions.leaveResource({ socketId }));
+          const state = store.getState();
+          // state = reducer(state, LEAVE_RESOURCE, { socketId });
+
           socket.leave(getResourceChannel(currentResourceId), () => {
             // TODO: store.getResourceById(currentResourceId)
             io.to(getResourceChannel(currentResourceId)).emit(REFRESH_RESOURCE, state.resources.find((resource = {}) => resource.id === currentResourceId));
           });
         }
 
-        const { resourceId } = data;
-
         if (resourceId) {
-          state = reducer(state, JOIN_RESOURCE, {
-            socketId,
-            resourceId,
-          });
+          store.dispatch(actions.joinResource({ socketId, resourceId }));
+          const state = store.getState();
 
           socket.join(getResourceChannel(resourceId), () => {
             // TODO: store.getResourceById(resourceId)
@@ -461,6 +381,7 @@ export default io => {
         console.info(`event '${LEAVE_RESOURCE}' received from ${socketId}`);
 
         // TODO: store.getClientBySocketId(socketId)
+        const state = store.getState();
         const { resourceId } = state.clients.find((client = {}) => client.socketId === socketId) || {};
 
         if (!resourceId) {
@@ -468,16 +389,19 @@ export default io => {
           return;
         }
 
-        state = reducer(state, LEAVE_RESOURCE, { socketId });
-
-        // TODO: store.getResourceById(resourceId)
-        io.to(getResourceChannel(resourceId)).emit(REFRESH_RESOURCE, state.resources.find((resource = {}) => resource.id === resourceId));
+        socket.leave(getResourceChannel(resourceId), () => {
+          store.dispatch(actions.leaveResource({ socketId }));
+          const state = store.getState();
+          // TODO: store.getResourceById(resourceId)
+          io.to(getResourceChannel(resourceId)).emit(REFRESH_RESOURCE, state.resources.find((resource = {}) => resource.id === resourceId));
+        });
       });
 
       socket.on(MARK_RESOURCE_AS_PROCESSED, () => {
         console.info(`event '${MARK_RESOURCE_AS_PROCESSED}' received from ${socketId}`);
 
         // TODO: store.getClientBySocketId(socketId)
+        let state = store.getState();
         const { resourceId } = state.clients.find((client = {}) => client.socketId === socketId) || {};
 
         if (!resourceId) {
@@ -485,7 +409,14 @@ export default io => {
           return;
         }
 
-        state = reducer(state, MARK_RESOURCE_AS_PROCESSED, { socketId });
+        store.dispatch(action.markResourceAsProcessed({ socketId, resourceId }));
+        state = store.getState();
+        const resource = state.resources.find((resource = {}) => resource.id === resourceId);
+        const { queueId } = resource;
+
+        io.to(getQueueChannel(queueId)).emit(REFRESH_QUEUE, Object.assign({}, state.queues.find(queue => queue.id === queueId), {
+          numOfPendingItems: state.resources.filter(resource => resource.queueId === queue.id && !state.processedResources.includes(resource.id)).length,
+        }));
 
         // TODO: store.getResourceById(resourceId)
         io.to(getResourceChannel(resourceId)).emit(REFRESH_RESOURCE, state.resources.find((resource = {}) => resource.id === resourceId));
@@ -496,9 +427,11 @@ export default io => {
         console.info(`socket ${socketId} disconnected.`);
 
         // TODO: store.getClientBySocketId(socketId)
+        let state = store.getState();
         const { queueId, resourceId } = state.clients.find((client = {}) => client.socketId === socketId) || {};
 
-        state = reducer(state, DISCONNECT, { socketId });
+        store.dispatch(actions.disconnect({ socketId }));
+        state = store.getState();
 
         if (queueId) {
           socket.leave(getResourceChannel(queueId));

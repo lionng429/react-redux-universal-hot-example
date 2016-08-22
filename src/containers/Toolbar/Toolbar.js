@@ -37,11 +37,10 @@ export default class ToolbarContainer extends Component {
 
   componentDidMount() {
     const { socket } = global;
-    const { updateNumOfPendingItemsById, updateResource } = this.props;
+    const { updateResource } = this.props;
 
     socket.on(REFRESH_QUEUE, queue => {
-      const { id, numOfPendingItems } = queue;
-      updateNumOfPendingItemsById(id, numOfPendingItems);
+      this.handleUpdateQueue(queue);
     });
 
     socket.on(ASSIGN_RESOURCE, resource => {
@@ -53,10 +52,10 @@ export default class ToolbarContainer extends Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    const { queueId, resource } = this.props;
-    const { queueId: nextQueueId, resource: nextResource } = nextProps;
+    const { queueId, resource, numOfPendingItems } = this.props;
+    const { queueId: nextQueueId, resource: nextResource, numOfPendingItems: nextNumOfPendingItems } = nextProps;
 
-    return queueId !== nextQueueId || resource.id !== nextResource.id;
+    return queueId !== nextQueueId || resource.id !== nextResource.id || numOfPendingItems !== nextNumOfPendingItems;
   }
 
   componentDidUpdate(prevProps) {
@@ -96,6 +95,14 @@ export default class ToolbarContainer extends Component {
     socket.emit(GET_NEXT_RESOURCE, {
       timestamp: new Date().getTime(),
     });
+  }
+
+  handleUpdateQueue(queue) {
+    const { queueId, updateQueue } = this.props;
+
+    if (queue.id === queueId) {
+      updateQueue(queue);
+    }
   }
 
   handleSkipResource() {
@@ -139,5 +146,5 @@ ToolbarContainer.propTypes = {
   resetQueue: PropTypes.func.isRequired,
   selectQueue: PropTypes.func.isRequired,
   updateResource: PropTypes.func.isRequired,
-  updateNumOfPendingItemsById: PropTypes.func.isRequired,
+  updateQueue: PropTypes.func.isRequired,
 };

@@ -12,7 +12,6 @@ export const REFRESH_QUEUE = 'refresh queue';
 export const REFRESH_QUEUES = 'refresh queues';
 
 export const ASSIGN_RESOURCE = 'assign resource';
-export const GET_LAST_RESOURCE = 'get last resource';
 export const GET_NEXT_RESOURCE = 'get next resource';
 export const SKIP_RESOURCE = 'skip resource';
 export const REFRESH_RESOURCE = 'refresh resource';
