@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import Helmet from 'react-helmet';
 import Resource from '../../components/Resource';
 import * as resourceActions from '../../redux/modules/resource';
-import { JOIN_RESOURCE, LEAVE_RESOURCE, SWITCH_RESOURCE, UPDATE_RESOURCE } from '../../../queueSystem/events';
+import { JOIN_RESOURCE, LEAVE_RESOURCE, REFRESH_RESOURCE, MARK_RESOURCE_AS_PROCESSED } from '../../../queueSystem/events';
 
 @connect(
   state => ({
@@ -19,7 +19,6 @@ export default class ResourceContainer extends Component {
 
     this.joinResourceChannel = this.joinResourceChannel.bind(this);
     this.leaveResourceChannel = this.leaveResourceChannel.bind(this);
-    this.switchResourceChannel = this.switchResourceChannel.bind(this);
     this.handleUpdateResource = this.handleUpdateResource.bind(this);
     this.markAsProcessed = this.markAsProcessed.bind(this);
   }
@@ -33,9 +32,12 @@ export default class ResourceContainer extends Component {
     );
 
     const { resource } = this.props;
-    this.joinResourceChannel(resource);
 
-    socket.on(UPDATE_RESOURCE, this.handleUpdateResource);
+    if (resource) {
+      this.joinResourceChannel(resource.id);
+    }
+
+    socket.on(REFRESH_RESOURCE, this.handleUpdateResource);
   }
 
   componentDidUpdate(prevProps) {
@@ -43,12 +45,12 @@ export default class ResourceContainer extends Component {
     const { resource } = this.props;
 
     if (prevResource.id !== resource.id) {
-      if (prevResource.id && resource.id) {
-        this.switchResourceChannel(prevResource, resource);
-      } else if (prevResource.id) {
-        this.leaveResourceChannel(prevResource);
-      } else if (resource.id) {
-        this.joinResourceChannel(resource);
+      if (prevResource.id && !resource.id) {
+        this.leaveResourceChannel();
+      }
+
+      if (resource.id) {
+        this.joinResourceChannel(resource.id);
       }
     }
   }
@@ -64,48 +66,19 @@ export default class ResourceContainer extends Component {
     this.handleUpdateResource({});
   }
 
-  joinResourceChannel(resource) {
+  joinResourceChannel(resourceId) {
     const { socket } = global;
-    const { user } = this.props;
-
-    if (Object.keys(resource).length > 0) {
-      socket.emit(JOIN_RESOURCE, {
-        resource,
-        user,
-        timestamp: new Date().getTime(),
-      });
-    }
+    socket.emit(JOIN_RESOURCE, { resourceId });
   }
 
-  leaveResourceChannel(resource) {
+  leaveResourceChannel() {
     const { socket } = global;
-    const { user } = this.props;
-
-    if (Object.keys(resource).length > 0) {
-      socket.emit(LEAVE_RESOURCE, {
-        resource,
-        user,
-        timestamp: new Date().getTime(),
-      });
-    }
-  }
-
-  switchResourceChannel(fromResource, toResource) {
-    const { socket } = global;
-    const { user } = this.props;
-
-    socket.emit(SWITCH_RESOURCE, {
-      fromResource,
-      toResource,
-      user,
-      timestamp: new Date().getTime(),
-    });
+    socket.emit(LEAVE_RESOURCE);
   }
 
   markAsProcessed() {
-    // emit a event to sync the state on ws server
-    const { markResourceAsProcessed, resource } = this.props;
-    markResourceAsProcessed(resource);
+    const { socket } = global;
+    socket.emit(MARK_RESOURCE_AS_PROCESSED);
   }
 
   handleUpdateResource(resource) {
@@ -114,7 +87,7 @@ export default class ResourceContainer extends Component {
   }
 
   render() {
-    const { lockSysSocket } = global;
+    // const { lockSysSocket } = global;
     const { resource, user } = this.props;
     const { locker } = resource;
 
@@ -124,7 +97,7 @@ export default class ResourceContainer extends Component {
         <div className="container">
           <Resource
             {...resource}
-            isLocked={(!lockSysSocket.connected || lockSysSocket.disconnected) || (locker && locker.name !== user.name)}
+            isLocked={(locker && locker.socketId !== user.socketId)}
             markResourceAsProcessed={this.markResourceAsProcessed}
           />
         </div>

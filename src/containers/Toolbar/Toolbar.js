@@ -11,6 +11,7 @@ import {
   ASSIGN_RESOURCE,
   SKIP_RESOURCE,
   GET_NEXT_RESOURCE,
+  REFRESH_QUEUE,
 } from '../../../queueSystem/events';
 
 @connect(
@@ -36,7 +37,12 @@ export default class ToolbarContainer extends Component {
 
   componentDidMount() {
     const { socket } = global;
-    const { updateResource } = this.props;
+    const { updateNumOfPendingItemsById, updateResource } = this.props;
+
+    socket.on(REFRESH_QUEUE, queue => {
+      const { id, numOfPendingItems } = queue;
+      updateNumOfPendingItemsById(id, numOfPendingItems);
+    });
 
     socket.on(ASSIGN_RESOURCE, resource => {
       if (resource) {
@@ -46,25 +52,29 @@ export default class ToolbarContainer extends Component {
     });
   }
 
+  shouldComponentUpdate(nextProps) {
+    const { queueId, resource } = this.props;
+    const { queueId: nextQueueId, resource: nextResource } = nextProps;
+
+    return queueId !== nextQueueId || resource.id !== nextResource.id;
+  }
+
   componentDidUpdate(prevProps) {
     const { socket } = global;
-    const { user } = this.props;
     const { queueId: prevQueueId } = prevProps;
     const { queueId } = this.props;
 
     if (prevQueueId !== queueId) {
-      if (!!queueId) {
+      if (queueId) {
         socket.emit(JOIN_QUEUE, {
           queueId,
-          user,
           timestamp: new Date().getTime(),
         });
       }
 
-      if (!!prevQueueId) {
+      if (prevQueueId && !queueId) {
         socket.emit(LEAVE_QUEUE, {
           queueId: prevQueueId,
-          user,
           timestamp: new Date().getTime(),
         });
       }
@@ -82,20 +92,16 @@ export default class ToolbarContainer extends Component {
 
   handleGetNextResource() {
     const { socket } = global;
-    const { user } = this.props;
 
     socket.emit(GET_NEXT_RESOURCE, {
-      user,
       timestamp: new Date().getTime(),
     });
   }
 
   handleSkipResource() {
     const { socket } = global;
-    const { user } = this.props;
 
     socket.emit(SKIP_RESOURCE, {
-      user,
       timestamp: new Date().getTime(),
     });
   }
@@ -133,4 +139,5 @@ ToolbarContainer.propTypes = {
   resetQueue: PropTypes.func.isRequired,
   selectQueue: PropTypes.func.isRequired,
   updateResource: PropTypes.func.isRequired,
+  updateNumOfPendingItemsById: PropTypes.func.isRequired,
 };

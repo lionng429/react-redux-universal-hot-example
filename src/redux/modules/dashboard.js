@@ -1,7 +1,7 @@
 const LOADED_QUEUES = 'LOADED_QUEUES';
 
 const initialState = {
-  queues: {},
+  queues: [],
 };
 
 export default function reducer(state = initialState, action = {}) {

@@ -5,7 +5,7 @@ import Helmet from 'react-helmet';
 import Dashboard from '../../components/Dashboard';
 import * as dashboardActions from '../../redux/modules/dashboard';
 import { selectQueue } from '../../redux/modules/queue';
-import { JOIN_DASHBOARD, LEAVE_DASHBOARD, QUEUES_LOADED } from '../../../queueSystem/events';
+import { JOIN_DASHBOARD, LEAVE_DASHBOARD, REFRESH_QUEUES } from '../../../queueSystem/events';
 
 @connect(
   state => ({
@@ -36,7 +36,7 @@ export default class Home extends Component {
     socket.emit(JOIN_DASHBOARD);
 
     // how to prevent from re-declaration upon re-mount?
-    socket.on(QUEUES_LOADED, this.handleQueuesLoaded);
+    socket.on(REFRESH_QUEUES, this.handleQueuesLoaded);
   }
 
   componentWillUnmount() {
@@ -53,6 +53,7 @@ export default class Home extends Component {
   render() {
     const { queueId, queues, user, selectQueue: handleSelectQueue } = this.props;
     const styles = require('./Home.scss');
+
     return (
       <div className={styles.home}>
         <Helmet title="Home"/>

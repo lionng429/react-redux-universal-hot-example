@@ -17,15 +17,15 @@ export default class Dashboard extends Component {
             <h4>Catalog</h4>
 
             <ul>
-              {Object.values(queues).filter(queue => queue.type === 'native').map((queue, idx) =>
+              {queues.filter(queue => queue.type === 'native').map((queue, idx) =>
                   <li key={idx}>
-                    <strong>{queue.identifier}</strong><br />
+                    <strong>{queue.id}</strong><br />
                     remaining Items: {queue.remainingItems}<br />
                     processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
                     {
-                      (user && currentQueueId !== queue.identifier) && (
+                      (user && currentQueueId !== queue.id) && (
                         <StartProcessButton
-                          queueId={queue.identifier}
+                          queueId={queue.id}
                           handleSelectQueue={handleSelectQueue}
                         />
                       )
@@ -38,15 +38,15 @@ export default class Dashboard extends Component {
             <h4>Consumer Platform</h4>
 
             <ul>
-              {Object.values(queues).filter(queue => queue.type === 'native').map((queue, idx) =>
+              {queues.filter(queue => queue.type === 'native').map((queue, idx) =>
                   <li key={idx}>
-                    <strong>{queue.identifier}</strong><br />
+                    <strong>{queue.id}</strong><br />
                     remaining Items: {queue.remainingItems}<br />
                     processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
                     {
-                      (user && currentQueueId !== queue.identifier) && (
+                      (user && currentQueueId !== queue.id) && (
                         <StartProcessButton
-                          queueId={queue.identifier}
+                          queueId={queue.id}
                           handleSelectQueue={handleSelectQueue}
                         />
                       )
@@ -58,15 +58,15 @@ export default class Dashboard extends Component {
           <Col md={6}>
             <h3>Customs</h3>
             <ul>
-              {Object.values(queues).filter(queue => queue.type === 'native').map((queue, idx) =>
+              {queues.filter(queue => queue.type === 'native').map((queue, idx) =>
                   <li key={idx}>
-                    <strong>{queue.identifier}</strong><br />
+                    <strong>{queue.id}</strong><br />
                     remaining Items: {queue.remainingItems}<br />
                     processors: <ul>{queue.processors.map((processor, processorIdx) => <li key={processorIdx}><a href={'#' + processor.id}>{processor.name}</a></li>)}</ul>
                     {
-                      (user && currentQueueId !== queue.identifier) && (
+                      (user && currentQueueId !== queue.id) && (
                         <StartProcessButton
-                          queueId={queue.identifier}
+                          queueId={queue.id}
                           handleSelectQueue={handleSelectQueue}
                         />
                       )

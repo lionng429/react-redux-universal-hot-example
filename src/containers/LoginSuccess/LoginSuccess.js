@@ -1,6 +1,7 @@
 import React, {Component, PropTypes} from 'react';
 import {connect} from 'react-redux';
 import * as authActions from 'redux/modules/auth';
+import { LOGIN } from '../../../queueSystem/events';
 
 @connect(
     state => ({user: state.auth.user}),
@@ -10,6 +11,13 @@ class LoginSuccess extends Component {
   static propTypes = {
     user: PropTypes.object,
     logout: PropTypes.func
+  }
+
+  componentDidMount() {
+    const { user } = this.props;
+    const { socket } = global;
+
+    socket.emit(LOGIN, user);
   }
 
   render() {

@@ -25,10 +25,10 @@ function initSocket() {
   // cannot declare the socker events here
   // as actions could not be dispatched
   const socket = io('', { path: '/ws/queue' });
-  const lockSysSocket = io('', { path: '/ws/lock' });
+  // const lockSysSocket = io('', { path: '/ws/lock' });
 
   global.socket = socket;
-  global.lockSysSocket = lockSysSocket;
+  // global.lockSysSocket = lockSysSocket;
 }
 
 initSocket();

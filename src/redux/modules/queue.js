@@ -19,7 +19,7 @@ export default function reducer(state = initialState, action = {}) {
     case UPDATE_NUMBER_OF_PENDING_ITEMS:
       return {
         ...state,
-        numOfPendingItems: 0,
+        numOfPendingItems: state.queueId === action.queueId ? action.numOfPendingItems : state.numOfPendingItems,
       };
 
     case RESET_QUEUE:
@@ -34,6 +34,14 @@ export function selectQueue(queueId) {
   return {
     type: UPDATE_SELECTED_QUEUE,
     queueId,
+  };
+}
+
+export function updateNumOfPendingItemsById(queueId, numOfPendingItems) {
+  return {
+    type: UPDATE_NUMBER_OF_PENDING_ITEMS,
+    queueId,
+    numOfPendingItems,
   };
 }
 
