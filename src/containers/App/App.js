@@ -43,6 +43,10 @@ export default class App extends Component {
     store: PropTypes.object.isRequired
   };
 
+  componentDidMount() {
+    console.log('app did mount');
+  }
+
   componentWillReceiveProps(nextProps) {
     if (!this.props.user && nextProps.user) {
       // login

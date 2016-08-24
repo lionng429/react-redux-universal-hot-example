@@ -19,6 +19,7 @@ import {
     user: state.auth.user,
     queueId: state.queue.queueId,
     numOfPendingItems: state.queue.numOfPendingItems,
+    isFetchingResource: state.resource.isFetching,
     resource: state.resource.resource,
   }),
   {
@@ -37,7 +38,6 @@ export default class ToolbarContainer extends Component {
 
   componentDidMount() {
     const { socket } = global;
-    const { updateResource } = this.props;
 
     socket.on(REFRESH_QUEUE, queue => {
       this.handleUpdateQueue(queue);
@@ -45,7 +45,6 @@ export default class ToolbarContainer extends Component {
 
     socket.on(ASSIGN_RESOURCE, resource => {
       if (resource) {
-        updateResource(resource);
         browserHistory.push(`/resources/${resource.type}/${resource.id}`);
       }
     });
@@ -117,6 +116,7 @@ export default class ToolbarContainer extends Component {
     const {
       queueId,
       numOfPendingItems,
+      isFetchingResource,
       resource,
       onResourcePage,
     } = this.props;
@@ -127,8 +127,8 @@ export default class ToolbarContainer extends Component {
       <Toolbar
         isEmpty={!queueId}
         resource={resource}
-        hasGoToResourceButton={!onResourcePage}
-        hasSkipButton={!isEmpty(resource) && !isLastResource}
+        hasGoToResourceButton={!isFetchingResource && !onResourcePage}
+        hasSkipButton={!isFetchingResource && !isEmpty(resource) && !isLastResource}
         handleGoToResource={this.handleGetNextResource}
         handleLeaveQueue={this.handleLeaveQueue}
         handleSkipResource={this.handleSkipResource}
@@ -139,12 +139,12 @@ export default class ToolbarContainer extends Component {
 
 ToolbarContainer.propTypes = {
   queueId: PropTypes.string,
+  isFetchingResource: PropTypes.bool,
   resource: PropTypes.object,
   user: PropTypes.object,
   numOfPendingItems: PropTypes.number,
   onResourcePage: PropTypes.bool,
   resetQueue: PropTypes.func.isRequired,
   selectQueue: PropTypes.func.isRequired,
-  updateResource: PropTypes.func.isRequired,
   updateQueue: PropTypes.func.isRequired,
 };

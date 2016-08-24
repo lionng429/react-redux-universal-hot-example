@@ -140,10 +140,10 @@ export default io => {
           const remainingItems = value.paging.totalItemCount;
 
           data.resources = data.resources.concat(resources);
-          data[queueId] = { remainingItems };
+          data.remainingItems[queueId] = remainingItems;
 
           return data;
-        }, { resources: [] });
+        }, { remainingItems: {}, resources: [] });
 
         store.dispatch(actions.fetchResources(newData));
         const state = store.getState();

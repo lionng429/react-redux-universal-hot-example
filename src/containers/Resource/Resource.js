@@ -31,39 +31,43 @@ export default class ResourceContainer extends Component {
       'failed to establish websocket connection'
     );
 
-    const { resource } = this.props;
+    const { params: { id: resourceId } } = this.props;
 
-    if (resource) {
-      this.joinResourceChannel(resource.id);
+    if (resourceId) {
+      this.props.fetchResource(resourceId);
     }
 
     socket.on(REFRESH_RESOURCE, this.handleUpdateResource);
   }
 
   componentDidUpdate(prevProps) {
-    const { resource: prevResource } = prevProps;
-    const { resource } = this.props;
+    const { resource: prevResource, params: { id: prevResourceIdFromParam } } = prevProps;
+    const { resource, params: { id: resourceIdFromParam } } = this.props;
+
+    if (resourceIdFromParam && prevResourceIdFromParam !== resourceIdFromParam) {
+      this.props.fetchResource(resourceIdFromParam);
+    }
 
     if (prevResource.id !== resource.id) {
-      if (prevResource.id && !resource.id) {
-        this.leaveResourceChannel();
-      }
-
       if (resource.id) {
+        // when joining a channel,
+        // the server will leave the last channel by default
         this.joinResourceChannel(resource.id);
+      } else if (prevResource.id) {
+        this.leaveResourceChannel(prevResource.id);
       }
     }
   }
 
   componentWillUnmount() {
-    const { resource } = this.props;
+    const { resource, resetResource } = this.props;
 
-    if (resource) {
-      this.leaveResourceChannel(resource);
+    if (Object.keys(resource).length > 0) {
+      this.leaveResourceChannel();
     }
 
     // clear resource store
-    this.handleUpdateResource({});
+    resetResource();
   }
 
   joinResourceChannel(resourceId) {
@@ -82,8 +86,8 @@ export default class ResourceContainer extends Component {
   }
 
   handleUpdateResource(resource) {
-    const { updateResource } = this.props;
-    updateResource(resource);
+    const { updateResourceWatchers } = this.props;
+    updateResourceWatchers(resource);
   }
 
   render() {
@@ -110,6 +114,9 @@ ResourceContainer.propTypes = {
   params: PropTypes.object,
   user: PropTypes.object,
   resource: PropTypes.object,
+  fetchResource: PropTypes.func.isRequired,
   updateResource: PropTypes.func.isRequired,
+  resetResource: PropTypes.func.isRequired,
+  updateResourceWatchers: PropTypes.func.isRequired,
   markResourceAsProcessed: PropTypes.func.isRequired,
 };
