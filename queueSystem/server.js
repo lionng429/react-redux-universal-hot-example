@@ -409,17 +409,39 @@ export default io => {
           return;
         }
 
-        store.dispatch(action.markResourceAsProcessed({ socketId, resourceId }));
+        store.dispatch(actions.markResourceAsProcessed({ socketId, resourceId }));
         state = store.getState();
         const resource = state.resources.find((resource = {}) => resource.id === resourceId);
         const { queueId } = resource;
 
         io.to(getQueueChannel(queueId)).emit(REFRESH_QUEUE, Object.assign({}, state.queues.find(queue => queue.id === queueId), {
-          numOfPendingItems: state.resources.filter(resource => resource.queueId === queue.id && !state.processedResources.includes(resource.id)).length,
+          numOfPendingItems: state.resources.filter(resource => resource.queueId === queueId && !state.processedResources.includes(resource.id)).length,
         }));
 
         // TODO: store.getResourceById(resourceId)
         io.to(getResourceChannel(resourceId)).emit(REFRESH_RESOURCE, state.resources.find((resource = {}) => resource.id === resourceId));
+
+        // TODO: store.getNextAvailableResource
+        const pendingResources = state.resources
+          .filter(resource => resource.queueId === queueId)
+          .filter(resource => !state.processedResources.includes(resource.id));
+
+        const currentIndex = pendingResources.findIndex(resource => resource.id === resourceId);
+
+        // if there is no more pending resources
+        // return an empty resource
+        let nextResource = {};
+
+        // unknown current index, assign the first
+        if (pendingResources.length > 0) {
+          if (currentIndex === -1 || currentIndex >= pendingResources.length - 1) {
+            nextResource = pendingResources[0];
+          } else if (currentIndex < pendingResources.length - 1) {
+            nextResource = pendingResources[currentIndex + 1];
+          }
+        }
+
+        socket.emit(ASSIGN_RESOURCE, nextResource);
       });
 
       // when the user disconnected from the ws, e.g. closing browser

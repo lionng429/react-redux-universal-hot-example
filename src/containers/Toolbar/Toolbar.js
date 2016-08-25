@@ -12,6 +12,7 @@ import {
   SKIP_RESOURCE,
   GET_NEXT_RESOURCE,
   REFRESH_QUEUE,
+  MARK_RESOURCE_AS_PROCESSED,
 } from '../../../queueSystem/events';
 
 @connect(
@@ -34,6 +35,7 @@ export default class ToolbarContainer extends Component {
     this.handleLeaveQueue = this.handleLeaveQueue.bind(this);
     this.handleGetNextResource = this.handleGetNextResource.bind(this);
     this.handleSkipResource = this.handleSkipResource.bind(this);
+    this.handleMarkResourceAsProcessed = this.handleMarkResourceAsProcessed.bind(this);
   }
 
   componentDidMount() {
@@ -43,18 +45,28 @@ export default class ToolbarContainer extends Component {
       this.handleUpdateQueue(queue);
     });
 
-    socket.on(ASSIGN_RESOURCE, resource => {
-      if (resource) {
+    socket.on(ASSIGN_RESOURCE, (resource = {}) => {
+      if (resource && (resource.type && resource.id)) {
         browserHistory.push(`/resources/${resource.type}/${resource.id}`);
       }
     });
   }
 
   shouldComponentUpdate(nextProps) {
-    const { queueId, resource, numOfPendingItems } = this.props;
-    const { queueId: nextQueueId, resource: nextResource, numOfPendingItems: nextNumOfPendingItems } = nextProps;
+    const { isFetchingResource, queueId, resource, numOfPendingItems, onResourcePage } = this.props;
+    const {
+      isFetchingResource: nextIsFetchingResource,
+      queueId: nextQueueId,
+      resource: nextResource,
+      numOfPendingItems: nextNumOfPendingItems,
+      onResourcePage: nextOnResourcePage,
+    } = nextProps;
 
-    return queueId !== nextQueueId || resource.id !== nextResource.id || numOfPendingItems !== nextNumOfPendingItems;
+    return queueId !== nextQueueId ||
+      resource.id !== nextResource.id ||
+      numOfPendingItems !== nextNumOfPendingItems ||
+      isFetchingResource !== nextIsFetchingResource ||
+      onResourcePage !== nextOnResourcePage;
   }
 
   componentDidUpdate(prevProps) {
@@ -71,10 +83,7 @@ export default class ToolbarContainer extends Component {
       }
 
       if (prevQueueId && !queueId) {
-        socket.emit(LEAVE_QUEUE, {
-          queueId: prevQueueId,
-          timestamp: new Date().getTime(),
-        });
+        socket.emit(LEAVE_QUEUE);
       }
     }
   }
@@ -106,10 +115,12 @@ export default class ToolbarContainer extends Component {
 
   handleSkipResource() {
     const { socket } = global;
+    socket.emit(SKIP_RESOURCE);
+  }
 
-    socket.emit(SKIP_RESOURCE, {
-      timestamp: new Date().getTime(),
-    });
+  handleMarkResourceAsProcessed() {
+    const { socket } = global;
+    socket.emit(MARK_RESOURCE_AS_PROCESSED);
   }
 
   render() {
@@ -121,17 +132,21 @@ export default class ToolbarContainer extends Component {
       onResourcePage,
     } = this.props;
 
-    const isLastResource = numOfPendingItems === 0;
+    const noMoreResource = !isFetchingResource && (numOfPendingItems !== null && numOfPendingItems === 0);
 
     return (
       <Toolbar
         isEmpty={!queueId}
+        isFetchingResource={isFetchingResource}
         resource={resource}
-        hasGoToResourceButton={!isFetchingResource && !onResourcePage}
-        hasSkipButton={!isFetchingResource && !isEmpty(resource) && !isLastResource}
+        noMoreResource={noMoreResource}
+        hasGoToResourceButton={numOfPendingItems !== null && isEmpty(resource) && !noMoreResource && !onResourcePage}
+        hasSkipButton={!isEmpty(resource) && !noMoreResource}
+        hasMarkAsProcessedButton={!isFetchingResource && !isEmpty(resource)}
         handleGoToResource={this.handleGetNextResource}
         handleLeaveQueue={this.handleLeaveQueue}
         handleSkipResource={this.handleSkipResource}
+        handleMarkResourceAsProcessed={this.handleMarkResourceAsProcessed}
       />
     );
   }

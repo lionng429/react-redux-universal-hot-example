@@ -4,7 +4,7 @@ const RESET_QUEUE = 'RESET_QUEUE';
 
 const initialState = {
   queueId: null,
-  numOfPendingItems: 0,
+  numOfPendingItems: null,
 };
 
 export default function reducer(state = initialState, action = {}) {
@@ -13,7 +13,6 @@ export default function reducer(state = initialState, action = {}) {
       return {
         ...state,
         queueId: action.queueId,
-        numOfPendingItems: 0,
       };
 
     case UPDATE_QUEUE:
