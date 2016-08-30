@@ -3,7 +3,7 @@ import { Grid, Row, Col } from 'react-bootstrap';
 
 class Resource extends Component {
   render() {
-    const { id, locker, watchers, isLocked } = this.props;
+    const { id, lockSysSocketId, locker, watchers, isLocked, handleForceLock } = this.props;
 
     return (
       <Grid>
@@ -13,7 +13,7 @@ class Resource extends Component {
               id && <p>resource #{id}</p>
             }
             {
-              locker && <p>review by @{locker.name}</p>
+              locker && <p>review by @{locker.username}</p>
             }
             {
               isLocked && <p>LOCKED</p>
@@ -21,15 +21,34 @@ class Resource extends Component {
           </Col>
           <Col md={4}>
             {
-              locker && `locked by ${locker.name}`
+              locker && (
+                <div className="locker">
+                  <h3>Locked By:</h3>
+                  <p>locked by @{locker.username}</p>
+                </div>
+              )
             }
             {
               watchers && (
-                <div>
-                  <p>watchers:</p>
+                <div className="watchers">
+                  <h3>Watchers</h3>
                   <ul>
                     {
-                      watchers.map(watcher => <li>{watcher.name}</li>)
+                      watchers.map(watcher => (
+                        <li>
+                          @{watcher.username}
+                          {
+                            watcher.socketId === lockSysSocketId && (
+                              <span>(You)</span>
+                            )
+                          }
+                          {
+                            watcher.socketId === lockSysSocketId && (
+                              <button className="right" onClick={handleForceLock}>Force Lock</button>
+                            )
+                          }
+                        </li>
+                      ))
                     }
                   </ul>
                 </div>
@@ -44,9 +63,11 @@ class Resource extends Component {
 
 Resource.propTypes = {
   id: PropTypes.string,
+  lockSysSocketId: PropTypes.string,
   locker: PropTypes.object,
   watchers: PropTypes.array,
   isLocked: PropTypes.bool,
+  handleForceLock: PropTypes.func.isRequired,
 };
 
 export default Resource;

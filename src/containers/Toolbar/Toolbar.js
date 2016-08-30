@@ -22,6 +22,8 @@ import {
     numOfPendingItems: state.queue.numOfPendingItems,
     isFetchingResource: state.resource.isFetching,
     resource: state.resource.resource,
+    connectedLockSystem: state.lockSystem.connected,
+    lockSysSocketId: state.lockSystem.socketId,
   }),
   {
     ...resourceActions,
@@ -53,20 +55,33 @@ export default class ToolbarContainer extends Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    const { isFetchingResource, queueId, resource, numOfPendingItems, onResourcePage } = this.props;
+    const {
+      isFetchingResource,
+      queueId,
+      resource,
+      numOfPendingItems,
+      onResourcePage,
+      connectedLockSystem,
+      lockSysSocketId,
+    } = this.props;
     const {
       isFetchingResource: nextIsFetchingResource,
       queueId: nextQueueId,
       resource: nextResource,
       numOfPendingItems: nextNumOfPendingItems,
       onResourcePage: nextOnResourcePage,
+      connectedLockSystem: nextConnectedLockSystem,
+      lockSysSocketId: nextLockSysSocketId,
     } = nextProps;
 
     return queueId !== nextQueueId ||
       resource.id !== nextResource.id ||
+      resource.locker && nextResource.locker && resource.locker.socketId !== nextResource.locker.socketId ||
       numOfPendingItems !== nextNumOfPendingItems ||
       isFetchingResource !== nextIsFetchingResource ||
-      onResourcePage !== nextOnResourcePage;
+      onResourcePage !== nextOnResourcePage ||
+      connectedLockSystem !== nextConnectedLockSystem ||
+      lockSysSocketId !== nextLockSysSocketId;
   }
 
   componentDidUpdate(prevProps) {
@@ -130,8 +145,11 @@ export default class ToolbarContainer extends Component {
       isFetchingResource,
       resource,
       onResourcePage,
+      connectedLockSystem,
+      lockSysSocketId,
     } = this.props;
 
+    const isLocker = connectedLockSystem && (resource.locker && resource.locker.socketId === lockSysSocketId);
     const noMoreResource = !isFetchingResource && (numOfPendingItems !== null && numOfPendingItems === 0);
 
     return (
@@ -142,7 +160,7 @@ export default class ToolbarContainer extends Component {
         noMoreResource={noMoreResource}
         hasGoToResourceButton={numOfPendingItems !== null && isEmpty(resource) && !noMoreResource && !onResourcePage}
         hasSkipButton={!isEmpty(resource) && !noMoreResource}
-        hasMarkAsProcessedButton={!isFetchingResource && !isEmpty(resource)}
+        hasMarkAsProcessedButton={!isFetchingResource && !isEmpty(resource) && isLocker}
         handleGoToResource={this.handleGetNextResource}
         handleLeaveQueue={this.handleLeaveQueue}
         handleSkipResource={this.handleSkipResource}
@@ -159,6 +177,8 @@ ToolbarContainer.propTypes = {
   user: PropTypes.object,
   numOfPendingItems: PropTypes.number,
   onResourcePage: PropTypes.bool,
+  connectedLockSystem: PropTypes.bool,
+  lockSysSocketId: PropTypes.string,
   resetQueue: PropTypes.func.isRequired,
   selectQueue: PropTypes.func.isRequired,
   updateQueue: PropTypes.func.isRequired,

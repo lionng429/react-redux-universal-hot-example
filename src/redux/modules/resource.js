@@ -1,13 +1,10 @@
 const RESET_RESOURCE = 'RESET_RESOURCE';
 const UPDATE_RESOURCE = 'UPDATE_RESOURCE';
-const UPDATE_RESOURCE_WATCHERS = 'UPDATE_RESOURCE_WATCHERS';
+const UPDATE_RESOURCE_LOCKER_AND_WATCHERS = 'UPDATE_RESOURCE_LOCKER_AND_WATCHERS';
 const UPDATE_LOCKER = 'UPDATE_LOCKER';
 const FETCH_RESOURCE_START = 'FETCH_RESOURCE_START';
 const FETCH_RESOURCE_SUCCESS = 'FETCH_RESOURCE_SUCCESS';
 const FETCH_RESOURCE_FAIL = 'FETCH_RESOURCE_FAIL';
-const MARK_RESOURCE_AS_PROCESSED_START = 'MARK_RESOURCE_AS_PROCESSED_START';
-const MARK_RESOURCE_AS_PROCESSED_SUCCEEDED = 'MARK_RESOURCE_AS_PROCESSED_SUCCEEDED';
-const MARK_RESOURCE_AS_PROCESSED_FAILED = 'MARK_RESOURCE_AS_PROCESSED_FAILED';
 
 const initialState = {
   isFetching: false,
@@ -23,10 +20,10 @@ export default function reducer(state = initialState, action = {}) {
         resource: action.resource,
       };
 
-    case UPDATE_RESOURCE_WATCHERS:
+    case UPDATE_RESOURCE_LOCKER_AND_WATCHERS:
       return {
         ...state,
-        resource: action.watchers ? Object.assign({}, state.resource, { watchers: action.watchers }) : state.resource,
+        resource: Object.assign({}, state.resource, { locker: action.payload.locker, watchers: action.payload.watchers }),
       };
 
     case UPDATE_LOCKER:
@@ -48,7 +45,7 @@ export default function reducer(state = initialState, action = {}) {
       return {
         ...state,
         isFetching: false,
-        resource: action.result,
+        resource: Object.assign({}, state.resource, { id: action.result.id, name: action.result.name }),
         error: {},
       };
 
@@ -99,10 +96,13 @@ export function resetResource() {
   };
 }
 
-export function updateResourceWatchers(resource) {
+export function updateResourceLockerAndWatchers(resource = {}) {
   return {
-    type: UPDATE_RESOURCE_WATCHERS,
-    watchers: resource.watchers,
+    type: UPDATE_RESOURCE_LOCKER_AND_WATCHERS,
+    payload: {
+      locker: resource.locker || {},
+      watchers: resource.watchers || [],
+    },
   };
 }
 
@@ -110,16 +110,5 @@ export function updateLocker(locker) {
   return {
     type: UPDATE_LOCKER,
     locker,
-  };
-}
-
-export function markResourceAsProcessed(resource) {
-  return {
-    types: [
-      MARK_RESOURCE_AS_PROCESSED_START,
-      MARK_RESOURCE_AS_PROCESSED_SUCCEEDED,
-      MARK_RESOURCE_AS_PROCESSED_FAILED
-    ],
-    resource,
   };
 }

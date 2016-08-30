@@ -21,14 +21,20 @@ const dest = document.getElementById('content');
 const store = createStore(_browserHistory, client, window.__data);
 const history = syncHistoryWithStore(_browserHistory, store);
 
+import { CONNECT_LOCK_SYSTEM, DISCONNECT_LOCK_SYSTEM } from './redux/modules/lockSystem';
+
 function initSocket() {
-  // cannot declare the socker events here
-  // as actions could not be dispatched
-  const socket = io('', { path: '/ws/queue' });
-  // const lockSysSocket = io('', { path: '/ws/lock' });
+  const state = store.getState();
+  const { user } = state.auth;
+
+  const socket = io('', Object.assign({ path: '/ws/queue' }, user && { query: { username: user.name } }));
+  const lockSysSocket = io('', Object.assign({ path: '/ws/lock' }, user && { query: { username: user.name } }));
 
   global.socket = socket;
-  // global.lockSysSocket = lockSysSocket;
+  global.lockSysSocket = lockSysSocket;
+
+  lockSysSocket.on('connect', () => { store.dispatch({ type: CONNECT_LOCK_SYSTEM, payload: { socketId: lockSysSocket.io.engine.id } }); });
+  lockSysSocket.on('disconnect', () => { store.dispatch({ type: DISCONNECT_LOCK_SYSTEM }); });
 }
 
 initSocket();

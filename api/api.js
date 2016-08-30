@@ -65,9 +65,11 @@ if (config.apiPort) {
     console.info('==> 💻  Send requests to http://%s:%s', config.apiHost, config.apiPort);
   });
 
-  const socketEvents = require('../queueSystem/server')(io);
+  const queueSystemEvents = require('../queueSystem/server')(io);
+  const lockSystemEvents = require('../lockSystem/server')(lockIo);
 
   io.listen(runnable);
+  lockIo.listen(runnable);
 } else {
   console.error('==>     ERROR: No PORT environment variable has been specified');
 }

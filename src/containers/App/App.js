@@ -12,6 +12,8 @@ import { push } from 'react-router-redux';
 import config from '../../config';
 import { asyncConnect } from 'redux-async-connect';
 import { Toolbar } from '../index';
+import io from 'socket.io-client';
+import { CONNECT_LOCK_SYSTEM, DISCONNECT_LOCK_SYSTEM } from '../../redux/modules/lockSystem';
 
 @asyncConnect([{
   promise: ({store: {dispatch, getState}}) => {
@@ -43,13 +45,16 @@ export default class App extends Component {
     store: PropTypes.object.isRequired
   };
 
-  componentDidMount() {
-    console.log('app did mount');
-  }
-
   componentWillReceiveProps(nextProps) {
     if (!this.props.user && nextProps.user) {
       // login
+      const { user } = nextProps;
+
+      // TODO: see if this could be unify with initSocket in client.js
+      // re-establish the socket connection upon login
+      global.lockSysSocket = io('', Object.assign({ path: '/ws/lock', forceNew: true }, user && { query: { username: user.name } }));
+      global.lockSysSocket.on('connect', () => { this.context.store.dispatch({ type: CONNECT_LOCK_SYSTEM, payload: { socketId: global.lockSysSocket.io.engine.id } }); });
+      global.lockSysSocket.on('disconnect', () => { this.context.store.dispatch({ type: DISCONNECT_LOCK_SYSTEM }); });
       this.props.pushState('/loginSuccess');
     } else if (this.props.user && !nextProps.user) {
       // logout
