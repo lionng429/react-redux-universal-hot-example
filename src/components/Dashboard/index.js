@@ -5,8 +5,20 @@ import {
 } from 'react-bootstrap';
 
 export default class Dashboard extends Component {
+  constructor(props) {
+    super(props);
+
+    this.handleSelectQueue = this.handleSelectQueue.bind(this);
+  }
+
+  handleSelectQueue(queueId) {
+    const { queues } = this.props;
+    const queue = queues.find(_queue => _queue.id === queueId);
+    this.props.handleSelectQueue(queueId, queue.type);
+  }
+
   render() {
-    const { currentQueueId, queues, user, handleSelectQueue } = this.props;
+    const { currentQueueId, queues, user } = this.props;
 
     return (
       <Grid>
@@ -26,7 +38,7 @@ export default class Dashboard extends Component {
                       (user && currentQueueId !== queue.id) && (
                         <StartProcessButton
                           queueId={queue.id}
-                          handleSelectQueue={handleSelectQueue}
+                          handleSelectQueue={this.handleSelectQueue}
                         />
                       )
                     }
@@ -47,7 +59,7 @@ export default class Dashboard extends Component {
                       (user && currentQueueId !== queue.id) && (
                         <StartProcessButton
                           queueId={queue.id}
-                          handleSelectQueue={handleSelectQueue}
+                          handleSelectQueue={this.handleSelectQueue}
                         />
                       )
                     }
@@ -67,7 +79,7 @@ export default class Dashboard extends Component {
                       (user && currentQueueId !== queue.id) && (
                         <StartProcessButton
                           queueId={queue.id}
-                          handleSelectQueue={handleSelectQueue}
+                          handleSelectQueue={this.handleSelectQueue}
                         />
                       )
                     }

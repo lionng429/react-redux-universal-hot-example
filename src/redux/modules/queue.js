@@ -4,6 +4,7 @@ const RESET_QUEUE = 'RESET_QUEUE';
 
 const initialState = {
   queueId: null,
+  queueType: null,
   numOfPendingItems: null,
 };
 
@@ -13,6 +14,7 @@ export default function reducer(state = initialState, action = {}) {
       return {
         ...state,
         queueId: action.queueId,
+        queueType: action.queueType,
       };
 
     case UPDATE_QUEUE:
@@ -29,10 +31,11 @@ export default function reducer(state = initialState, action = {}) {
   }
 }
 
-export function selectQueue(queueId) {
+export function selectQueue(queueId, queueType) {
   return {
     type: UPDATE_SELECTED_QUEUE,
     queueId,
+    queueType,
   };
 }
 

@@ -19,6 +19,7 @@ class Toolbar extends Component {
       hasGoToResourceButton,
       hasMarkAsProcessedButton,
       hasSkipButton,
+      hasRequireAttentionButton,
       handleGoToResource,
       handleLeaveQueue,
       handleSkipResource,
@@ -80,6 +81,9 @@ class Toolbar extends Component {
                 {
                   !isFetchingResource && hasSkipButton && <Button bsStyle="link" onClick={handleSkipResource}>Skip</Button>
                 }
+                {
+                  !isFetchingResource && hasRequireAttentionButton && <Button bsStyle="link">Require attention</Button>
+                }
                 <Button bsStyle="link" onClick={handleLeaveQueue}><Glyphicon glyph="stop" /></Button>
               </ButtonGroup>
             </ButtonToolbar>
@@ -97,6 +101,7 @@ Toolbar.propTypes = {
   isFetchingResource: PropTypes.bool,
   noMoreResource: PropTypes.bool,
   resource: PropTypes.object,
+  hasRequireAttentionButton: PropTypes.bool,
   hasGoToResourceButton: PropTypes.bool,
   hasMarkAsProcessedButton: PropTypes.bool,
   hasSkipButton: PropTypes.bool,

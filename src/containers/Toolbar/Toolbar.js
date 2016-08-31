@@ -19,6 +19,7 @@ import {
   state => ({
     user: state.auth.user,
     queueId: state.queue.queueId,
+    queueType: state.queue.queueType,
     numOfPendingItems: state.queue.numOfPendingItems,
     isFetchingResource: state.resource.isFetching,
     resource: state.resource.resource,
@@ -58,6 +59,7 @@ export default class ToolbarContainer extends Component {
     const {
       isFetchingResource,
       queueId,
+      queueType,
       resource,
       numOfPendingItems,
       onResourcePage,
@@ -67,6 +69,7 @@ export default class ToolbarContainer extends Component {
     const {
       isFetchingResource: nextIsFetchingResource,
       queueId: nextQueueId,
+      queueType: nextQueueType,
       resource: nextResource,
       numOfPendingItems: nextNumOfPendingItems,
       onResourcePage: nextOnResourcePage,
@@ -75,6 +78,7 @@ export default class ToolbarContainer extends Component {
     } = nextProps;
 
     return queueId !== nextQueueId ||
+      queueType !== nextQueueType ||
       resource.id !== nextResource.id ||
       resource.locker && nextResource.locker && resource.locker.socketId !== nextResource.locker.socketId ||
       numOfPendingItems !== nextNumOfPendingItems ||
@@ -141,6 +145,7 @@ export default class ToolbarContainer extends Component {
   render() {
     const {
       queueId,
+      queueType,
       numOfPendingItems,
       isFetchingResource,
       resource,
@@ -149,6 +154,7 @@ export default class ToolbarContainer extends Component {
       lockSysSocketId,
     } = this.props;
 
+    const isNativeQueue = queueType === 'native';
     const isLocker = connectedLockSystem && (resource.locker && resource.locker.socketId === lockSysSocketId);
     const noMoreResource = !isFetchingResource && (numOfPendingItems !== null && numOfPendingItems === 0);
 
@@ -159,7 +165,8 @@ export default class ToolbarContainer extends Component {
         resource={resource}
         noMoreResource={noMoreResource}
         hasGoToResourceButton={numOfPendingItems !== null && isEmpty(resource) && !noMoreResource && !onResourcePage}
-        hasSkipButton={!isEmpty(resource) && !noMoreResource}
+        hasRequireAttentionButton={!isFetchingResource && !isEmpty(resource) && isNativeQueue && isLocker}
+        hasSkipButton={!isEmpty(resource) && !noMoreResource && !isNativeQueue}
         hasMarkAsProcessedButton={!isFetchingResource && !isEmpty(resource) && isLocker}
         handleGoToResource={this.handleGetNextResource}
         handleLeaveQueue={this.handleLeaveQueue}
@@ -172,6 +179,7 @@ export default class ToolbarContainer extends Component {
 
 ToolbarContainer.propTypes = {
   queueId: PropTypes.string,
+  queueType: PropTypes.oneOf(['native', 'custom']),
   isFetchingResource: PropTypes.bool,
   resource: PropTypes.object,
   user: PropTypes.object,

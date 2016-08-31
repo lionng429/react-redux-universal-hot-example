@@ -6,6 +6,10 @@ class StartProcessButton extends Component {
     this.handleClick = this.handleClick.bind(this);
   }
 
+  shouldComponentUpdate(nextProps) {
+    return this.props.queueId !== nextProps.queueId;
+  }
+
   handleClick() {
     const { queueId, handleSelectQueue } = this.props;
     handleSelectQueue(queueId);
