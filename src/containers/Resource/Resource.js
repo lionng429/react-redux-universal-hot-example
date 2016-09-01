@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import Helmet from 'react-helmet';
 import Resource from '../../components/Resource';
 import * as resourceActions from '../../redux/modules/resource';
-import { JOIN_RESOURCE, LEAVE_RESOURCE, MARK_RESOURCE_AS_PROCESSED } from '../../../queueSystem/events';
+import { JOIN_RESOURCE, LEAVE_RESOURCE } from '../../../queueSystem/events';
 import {
   ADD_LOCKER_TO_RESOURCE,
   FORCE_LOCK_RESOURCE,
@@ -27,7 +27,6 @@ export default class ResourceContainer extends Component {
     this.joinResourceChannel = this.joinResourceChannel.bind(this);
     this.leaveResourceChannel = this.leaveResourceChannel.bind(this);
     this.handleUpdateResource = this.handleUpdateResource.bind(this);
-    this.markResourceAsProcessed = this.markResourceAsProcessed.bind(this);
   }
 
   componentDidMount() {
@@ -94,11 +93,6 @@ export default class ResourceContainer extends Component {
     lockSysSocket.emit(REMOVE_LOCKER_FROM_RESOURCE);
   }
 
-  markResourceAsProcessed() {
-    const { socket } = global;
-    socket.emit(MARK_RESOURCE_AS_PROCESSED);
-  }
-
   handleForceLock() {
     const { lockSysSocket } = global;
     lockSysSocket.emit(FORCE_LOCK_RESOURCE);
@@ -120,7 +114,6 @@ export default class ResourceContainer extends Component {
             {...resource}
             lockSysSocketId={lockSysSocketId}
             isLocked={!connectedLockSystem || (locker && locker.socketId !== lockSysSocketId)}
-            markResourceAsProcessed={this.markResourceAsProcessed}
             handleForceLock={this.handleForceLock}
           />
         </div>

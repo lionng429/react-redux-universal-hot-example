@@ -2,6 +2,7 @@ import isEmpty from 'lodash/isEmpty';
 import React, { Component, PropTypes } from 'react';
 import { browserHistory } from 'react-router';
 import { connect } from 'react-redux';
+import shallowEqual from 'shallowequal';
 import * as queueActions from '../../redux/modules/queue';
 import * as resourceActions from '../../redux/modules/resource';
 import Toolbar from '../../components/Toolbar';
@@ -79,8 +80,7 @@ export default class ToolbarContainer extends Component {
 
     return queueId !== nextQueueId ||
       queueType !== nextQueueType ||
-      resource.id !== nextResource.id ||
-      resource.locker && nextResource.locker && resource.locker.socketId !== nextResource.locker.socketId ||
+      !shallowEqual(resource, nextResource) ||
       numOfPendingItems !== nextNumOfPendingItems ||
       isFetchingResource !== nextIsFetchingResource ||
       onResourcePage !== nextOnResourcePage ||
@@ -167,7 +167,7 @@ export default class ToolbarContainer extends Component {
         hasGoToResourceButton={numOfPendingItems !== null && isEmpty(resource) && !noMoreResource && !onResourcePage}
         hasRequireAttentionButton={!isFetchingResource && !isEmpty(resource) && isNativeQueue && isLocker}
         hasSkipButton={!isEmpty(resource) && !noMoreResource && !isNativeQueue}
-        hasMarkAsProcessedButton={!isFetchingResource && !isEmpty(resource) && isLocker}
+        hasMarkAsProcessedButton={!isFetchingResource && !isEmpty(resource) && isLocker && !!queueId}
         handleGoToResource={this.handleGetNextResource}
         handleLeaveQueue={this.handleLeaveQueue}
         handleSkipResource={this.handleSkipResource}

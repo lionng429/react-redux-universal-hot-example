@@ -24,6 +24,40 @@ app.use(session({
 }));
 app.use(bodyParser.json());
 
+app.get('/admin/:type/search', function (req, res) {
+  const { type } = req.params;
+  const { currentPage = 1, itemCountPerPage = 10 } = req.query;
+  const fromIndex = Math.max((currentPage - 1), 0) * itemCountPerPage;
+  const toIndex = fromIndex + itemCountPerPage;
+
+  // TODO: replace the following with real API call
+  const collection = [];
+
+  for (let i = 1; i <= 25; i++) {
+    collection.push({
+      type: 'entry',
+      id: `${type}-${Math.floor(Math.random() * 10000)}-${Math.floor(Math.random() * 10000)}`,
+      name: `Resource ${i}`,
+    })
+  }
+
+  setTimeout(() => {
+    res.status(200).json({
+      collection: collection.slice(fromIndex, toIndex),
+      paging: {
+        currentPage,
+        currentItemCount: collection.slice(fromIndex, itemCountPerPage).length,
+        itemCountPerPage,
+        totalItemCount: collection.length,
+        totalPageCount: Math.ceil(collection.length / itemCountPerPage),
+      },
+      sorting: {
+        sort: 'id',
+        order: 'DESC',
+      },
+    });
+  }, 1000);
+});
 
 app.use((req, res) => {
   const splittedUrlPath = req.url.split('?')[0].split('/').slice(1);

@@ -198,9 +198,11 @@ describe('app reducer', () => {
 
   describe('MARK_RESOURCE_AS_PROCESSED', () => {
     let state = reducer(intermediateState, {});
+    const joinedQueue = nativeQueues[0];
     const joinedResource = existingResource;
 
     beforeEach(() => {
+      state = reducer(state, { type: types.JOIN_QUEUE, payload: { socketId: existingUser.socketId, queueId: joinedQueue.identifier }});
       state = reducer(state, { type: types.JOIN_RESOURCE, payload: { socketId: existingUser.socketId, resourceId: existingResource.id }});
     });
 
@@ -219,7 +221,13 @@ describe('app reducer', () => {
 
       expect(state.processedResources).to.be.an('array')
         .that.have.lengthOf(newLength)
-        .that.have.property(`${newLength - 1}`, stateUser.resourceId);
+        .that.have.property(`${newLength - 1}`);
+
+      const processedResource = state.processedResources[newLength - 1];
+
+      expect(processedResource).that.to.be.an('object');
+      expect(processedResource).to.have.property('queueId', stateUser.queueId);
+      expect(processedResource).to.have.property('resourceId', stateUser.resourceId);
     });
 
     it('should not take any resourceId from payload', () => {

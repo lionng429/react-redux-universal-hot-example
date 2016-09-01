@@ -7,6 +7,9 @@ import {
   LEAVE_DASHBOARD,
   JOIN_QUEUE,
   LEAVE_QUEUE,
+  CREATE_CUSTOM_QUEUE,
+  CREATE_CUSTOM_QUEUE_SUCCESS,
+  CREATE_CUSTOM_QUEUE_FAIL,
   JOIN_RESOURCE,
   LEAVE_RESOURCE,
   ASSIGN_RESOURCE,
@@ -185,6 +188,40 @@ export default io => {
     return `queue#${queueId}`;
   }
 
+  /**
+   * @method getResourceInProcess
+   * to get the resource id(s) for the resource(s) being processed by client(s)
+   *
+   * @returns Array
+   */
+  function getResourcesInProcess() {
+    const state = store.getState();
+
+    return state.clients.reduce((resources, client) => {
+      if (client.resourceId) {
+        resources.push(client.resourceId);
+      }
+
+      return resources;
+    }, []);
+  }
+
+  /**
+   * @method getPendingResourcesByQueueId
+   *
+   * @param queueId {String}
+   * @returns {*}
+   */
+  function getPendingResourcesByQueueId(queueId) {
+    const state = store.getState();
+
+    return state.resources
+      .filter(resource => resources.queueId === queueId)
+      .filter(resource => !state.processedResources
+        .find(processedResource => processedResource.queueId === queueId && processedResource.id === resource.id))
+      .filter(resource => !(getResourcesInProcess()).includes(resource.id));
+  }
+
   try {
     io.on(CONNECTION, socket => {
       console.info(`socket.io connection ID: ${socket.conn.id} established from ${socket.handshake.address}`);
@@ -254,10 +291,12 @@ export default io => {
 
           io.to(DASHBOARD_CHANNEL).emit(REFRESH_QUEUES, state.queues);
 
+          const resourcesInProcess = getResourcesInProcess();
+
           // TODO: store.getAvailableResource()
           socket.emit(ASSIGN_RESOURCE, state.resources
             .filter(resource => resource.queueId === queueId)
-            .find(resource => !state.processedResources.includes(resource.id))
+            .find(resource => !state.processedResources.find(processedResource => processedResource.queueId === queueId && processedResource.resourceId === resource.id) && !resourcesInProcess.includes(resource.id))
           );
         });
       });
@@ -282,6 +321,42 @@ export default io => {
         });
       });
 
+      socket.on(CREATE_CUSTOM_QUEUE, (data = {}) => {
+        console.info(`event '${CREATE_CUSTOM_QUEUE}' received from ${socketId}`);
+
+        if (Object.keys(data.query).length === 0) {
+          socket.emit(CREATE_CUSTOM_QUEUE_FAIL, {
+            status: 400,
+            message: 'query data is missing',
+          });
+
+          return;
+        }
+
+        let state = store.getState();
+        const existingCustomQueue = state.queues.find(queue => queue.name === data.name);
+
+        // queue name should be unique
+        if (existingCustomQueue) {
+          socket.emit(CREATE_CUSTOM_QUEUE_FAIL, {
+            status: 409,
+            message: 'custom queue already exists',
+          });
+
+          return;
+        }
+
+        // const endpoint = '/api/${data.queueType}/search?${queryString.stringify(data.query)}';
+        // getResourceFromEndpoint(endpoint).then( ... )
+
+        const resources = [];
+        store.dispatch(actions.createQueue(data.name, resources));
+
+        state = store.getState();
+        io.to(DASHBOARD_CHANNEL).emit(REFRESH_QUEUES, state.queues);
+        socket.emit(CREATE_CUSTOM_QUEUE_SUCCESS, state.queues[state.queues.length - 1]);
+      });
+
       socket.on(GET_NEXT_RESOURCE, (data = {}) => {
         console.info(`event '${GET_NEXT_RESOURCE}' received from ${socketId}`);
 
@@ -295,14 +370,15 @@ export default io => {
 
         socket.emit(ASSIGN_RESOURCE, state.resources
           .filter(resource => resource.queueId === queueId)
-          .find(resource => !state.processedResources.includes(resource.id))
+          .filter(resource => !state.processedResources.find(processedResources => processedResources.queueId === queueId && processedResources.resourceId === resource.id))
+          .filter(resource => !(getResourcesInProcess()).includes(resource.id))[0]
         );
       });
 
       socket.on(SKIP_RESOURCE, (data = {}) => {
         console.info(`event '${SKIP_RESOURCE}' received from ${socketId}`);
 
-        const state = store.getState();
+        let state = store.getState();
         const { queueId, resourceId } = state.clients.find((client = {}) => client.socketId === socketId) || {};
 
         if (!queueId) {
@@ -315,10 +391,18 @@ export default io => {
           return;
         }
 
+        const currentQueue = state.queues.find(queue => queue.id === queueId);
+        const queueType = currentQueue.type;
+
+        if (queueType !== 'native') {
+          state = store.dispatch(actions.skipResource, { socketId });
+        }
+
         // TODO: store.getNextAvailableResource
         const pendingResources = state.resources
           .filter(resource => resource.queueId === queueId)
-          .filter(resource => !state.processedResources.includes(resource.id));
+          .filter(resource => !state.processedResources.find(processedResource => processedResource.queueId === queueId && processedResource.resourceId === resource.id))
+          .filter(resource => !(getResourcesInProcess()).includes(resource.id));
 
         const currentIndex = pendingResources.findIndex(resource => resource.id === resourceId);
 
@@ -413,9 +497,14 @@ export default io => {
         state = store.getState();
         const resource = state.resources.find((resource = {}) => resource.id === resourceId);
         const { queueId } = resource;
+        const resourcesInProcess = getResourcesInProcess();
 
         io.to(getQueueChannel(queueId)).emit(REFRESH_QUEUE, Object.assign({}, state.queues.find(queue => queue.id === queueId), {
-          numOfPendingItems: state.resources.filter(resource => resource.queueId === queueId && !state.processedResources.includes(resource.id)).length,
+          numOfPendingItems: state.resources
+            .filter(resource => resource.queueId === queueId)
+            .filter(resource => !state.processedResources.find(processedResource => processedResource.queueId === queueId && processedResource.resourceId === resource.id))
+            .filter(resource => !resourcesInProcess.includes(resource.id))
+            .length,
         }));
 
         // TODO: store.getResourceById(resourceId)
@@ -424,7 +513,8 @@ export default io => {
         // TODO: store.getNextAvailableResource
         const pendingResources = state.resources
           .filter(resource => resource.queueId === queueId)
-          .filter(resource => !state.processedResources.includes(resource.id));
+          .filter(resource => !state.processedResources.find(processedResource => processedResource.queueId === queueId && processedResource.resourceId === resource.id))
+          .filter(resource => !resourcesInProcess.includes(resource.id));
 
         const currentIndex = pendingResources.findIndex(resource => resource.id === resourceId);
 

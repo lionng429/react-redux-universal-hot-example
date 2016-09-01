@@ -5,8 +5,10 @@ import {
   FETCH_RESOURCES,
   LEAVE_QUEUE,
   JOIN_QUEUE,
+  CREATE_QUEUE,
   LEAVE_RESOURCE,
   JOIN_RESOURCE,
+  SKIP_RESOURCE,
   MARK_RESOURCE_AS_PROCESSED,
 } from './constants';
 
@@ -59,6 +61,13 @@ export default function app(state = initialState, action = {}) {
         })),
       };
 
+    case CREATE_QUEUE:
+      return {
+        ...state,
+        queues: state.queues.find(queue => queue.type === data.type && queue.id === data.id) ? state.queues : state.queues.concat([data]),
+        resources: state.queues.find(queue => queue.type === data.type && queue.id === data.id) ? state.resources : state.resources.concat(data.resources),
+      };
+
     case FETCH_RESOURCES:
       return {
         ...state,
@@ -86,10 +95,25 @@ export default function app(state = initialState, action = {}) {
         })),
       };
 
+    // skipping resource is just to put the resource to the last index
+    case SKIP_RESOURCE:
+      return {
+        ...state,
+        resources: state.resources
+          .concat(state.resources.filter(resource => resource.queueId === user.queueId && resource.id === user.resourceId))
+          .filter((resource, index) => index !== state.resources.findIndex(_resource => _resource.queueId === user.queueId && _resource.id === user.resourceId))
+      };
+
+    // resource is marked as processed in each queue
     case MARK_RESOURCE_AS_PROCESSED:
       return {
         ...state,
-        processedResources: state.resources.find(resource => resource.id === user.resourceId) ? state.processedResources.concat([user.resourceId]) : state.processedResources,
+        processedResources: state.resources.find(resource => resource.id === user.resourceId && resource.queueId === user.queueId) ?
+          state.processedResources.concat([{
+            queueId: user.queueId,
+            resourceId: user.resourceId,
+          }]) :
+          state.processedResources,
       };
 
     case DO_DISCONNECT:

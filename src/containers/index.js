@@ -9,3 +9,4 @@ export Survey from './Survey/Survey';
 export NotFound from './NotFound/NotFound';
 export Resource from './Resource/Resource';
 export Toolbar from './Toolbar/Toolbar';
+export Admin from './Admin/Admin';

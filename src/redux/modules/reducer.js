@@ -12,6 +12,7 @@ import dashboard from './dashboard';
 import resource from './resource';
 import queue from './queue';
 import lockSystem from './lockSystem';
+import admin from './admin';
 
 export default combineReducers({
   routing: routerReducer,
@@ -29,4 +30,5 @@ export default combineReducers({
   resource,
   queue,
   lockSystem,
+  admin
 });

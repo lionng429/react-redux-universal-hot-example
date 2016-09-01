@@ -4,8 +4,10 @@ import {
   FETCH_RESOURCES,
   LEAVE_QUEUE,
   JOIN_QUEUE,
+  CREATE_QUEUE,
   LEAVE_RESOURCE,
   JOIN_RESOURCE,
+  SKIP_RESOURCE,
   MARK_RESOURCE_AS_PROCESSED,
 } from './constants';
 
@@ -44,6 +46,20 @@ export function joinQueue(payload) {
   };
 }
 
+export function createQueue(name, resources) {
+  return {
+    type: CREATE_QUEUE,
+    payload: {
+      id: name,
+      type: 'custom',
+      name,
+      resources,
+      remainingItems: resources.length,
+      processors: [],
+    },
+  };
+}
+
 export function leaveResource(payload) {
   return {
     type: LEAVE_RESOURCE,
@@ -54,6 +70,13 @@ export function leaveResource(payload) {
 export function joinResource(payload) {
   return {
     type: JOIN_RESOURCE,
+    payload,
+  };
+}
+
+export function skipResource(payload) {
+  return {
+    type: SKIP_RESOURCE,
     payload,
   };
 }

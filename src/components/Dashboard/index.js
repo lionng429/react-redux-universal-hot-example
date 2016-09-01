@@ -70,7 +70,7 @@ export default class Dashboard extends Component {
           <Col md={6}>
             <h3>Customs</h3>
             <ul>
-              {queues.filter(queue => queue.type === 'native').map((queue, idx) =>
+              {queues.filter(queue => queue.type === 'custom').map((queue, idx) =>
                   <li key={idx}>
                     <strong>{queue.id}</strong><br />
                     remaining Items: {queue.remainingItems}<br />
