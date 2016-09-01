@@ -2,7 +2,6 @@ import React, { Component, PropTypes } from 'react';
 import {
   Navbar, Nav, NavDropdown, MenuItem, NavItem,
   ButtonToolbar, ButtonGroup,
-  Input,
   Button,
   Glyphicon,
   OverlayTrigger,
@@ -33,11 +32,6 @@ class Toolbar extends Component {
             <MenuItem eventKey="1">Settings</MenuItem>
             <MenuItem eventKey="2">Statistics</MenuItem>
           </NavDropdown>
-        </Nav>
-        <Nav>
-          <li className="navbar-form">
-            <Input type="text" size={30} placeholder="" buttonAfter={<Button bsStyle="success" type="submit">Search</Button>}/>
-          </li>
         </Nav>
         {
           !isFetchingResource ? (
