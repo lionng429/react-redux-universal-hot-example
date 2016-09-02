@@ -64,6 +64,10 @@ export default class AdminContainer extends Component {
   }
 
   componentWillUnmount() {
+    const { socket } = global;
+    socket.off(CREATE_CUSTOM_QUEUE_SUCCESS, this.handleCreateQueueSuccess);
+    socket.off(CREATE_CUSTOM_QUEUE_FAIL, this.handleCreateQueueFail);
+
     this.props.resetAdmin();
   }
 

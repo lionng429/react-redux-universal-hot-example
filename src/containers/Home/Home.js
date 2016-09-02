@@ -34,8 +34,6 @@ export default class Home extends Component {
     );
 
     socket.emit(JOIN_DASHBOARD);
-
-    // how to prevent from re-declaration upon re-mount?
     socket.on(REFRESH_QUEUES, this.handleQueuesLoaded);
   }
 
@@ -43,6 +41,7 @@ export default class Home extends Component {
     const { socket } = global;
 
     socket.emit(LEAVE_DASHBOARD);
+    socket.off(REFRESH_QUEUES, this.handleQueuesLoaded);
   }
 
   handleQueuesLoaded(queues) {

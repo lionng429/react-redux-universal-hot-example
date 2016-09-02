@@ -44,18 +44,8 @@ export default class ToolbarContainer extends Component {
 
   componentDidMount() {
     const { socket } = global;
-
-    socket.on(REFRESH_QUEUE, queue => {
-      this.handleUpdateQueue(queue);
-    });
-
-    socket.on(ASSIGN_RESOURCE, (resource = {}) => {
-      if (resource && (resource.type && resource.id)) {
-        browserHistory.push(`/resources/${resource.type}/${resource.id}`);
-      } else if (resource && !resource.id) {
-        browserHistory.push(`/resources`);
-      }
-    });
+    socket.on(REFRESH_QUEUE, this.handleUpdateQueue);
+    socket.on(ASSIGN_RESOURCE, this.handleChangeResource);
   }
 
   shouldComponentUpdate(nextProps) {
@@ -111,7 +101,19 @@ export default class ToolbarContainer extends Component {
   }
 
   componentWillUnmount() {
+    const { socket } = global;
+    socket.off(REFRESH_QUEUE, this.handleUpdateQueue);
+    socket.off(ASSIGN_RESOURCE, this.handleChangeResource);
+
     this.props.resetQueue();
+  }
+
+  handleChangeResource(resource = {}) {
+    if (resource && (resource.type && resource.id)) {
+      browserHistory.push(`/resources/${resource.type}/${resource.id}`);
+    } else if (resource && !resource.id) {
+      browserHistory.push(`/resources`);
+    }
   }
 
   handleLeaveQueue() {
