@@ -52,6 +52,8 @@ export default class ToolbarContainer extends Component {
     socket.on(ASSIGN_RESOURCE, (resource = {}) => {
       if (resource && (resource.type && resource.id)) {
         browserHistory.push(`/resources/${resource.type}/${resource.id}`);
+      } else if (resource && !resource.id) {
+        browserHistory.push(`/resources`);
       }
     });
   }
@@ -67,6 +69,7 @@ export default class ToolbarContainer extends Component {
       connectedLockSystem,
       lockSysSocketId,
     } = this.props;
+
     const {
       isFetchingResource: nextIsFetchingResource,
       queueId: nextQueueId,

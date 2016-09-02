@@ -43,7 +43,7 @@ export default (store) => {
 
       { /* Routes requiring login */ }
       <Route onEnter={requireLogin}>
-        <Route path="resources/:type/:id" component={Resource} />
+        <Route path="resources(/:type/:id)" component={Resource} />
         <Route path="admin(/:type/search)" component={Admin} />
         <Route path="chat" component={Chat}/>
         <Route path="loginSuccess" component={LoginSuccess}/>

@@ -53,6 +53,8 @@ export default class ResourceContainer extends Component {
     // re-fetch the resource data upon change in resource id param in URL
     if (resourceIdFromParam && prevResourceIdFromParam !== resourceIdFromParam) {
       this.props.fetchResource(resourceIdFromParam);
+    } else if (!resourceIdFromParam) {
+      this.props.resetResource();
     }
 
     if (prevResource.id !== resource.id) {
@@ -104,18 +106,26 @@ export default class ResourceContainer extends Component {
   }
 
   render() {
-    const { resource, connectedLockSystem, lockSysSocketId } = this.props;
+    const { params: { id: resourceIdFromParam }, resource, connectedLockSystem, lockSysSocketId } = this.props;
     const { locker } = resource;
     return (
       <div>
         <Helmet title="Resource"/>
         <div className="container">
-          <Resource
-            {...resource}
-            lockSysSocketId={lockSysSocketId}
-            isLocked={!connectedLockSystem || (locker && locker.socketId !== lockSysSocketId)}
-            handleForceLock={this.handleForceLock}
-          />
+          {
+            !resourceIdFromParam ? (
+              <div>
+                <p>There is no more pending resources in this queue. Please wait and the system will assign task to you as soon as it is available.</p>
+              </div>
+            ) : (
+              <Resource
+                {...resource}
+                lockSysSocketId={lockSysSocketId}
+                isLocked={!connectedLockSystem || (locker && locker.socketId !== lockSysSocketId)}
+                handleForceLock={this.handleForceLock}
+              />
+            )
+          }
         </div>
       </div>
     );
