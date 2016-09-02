@@ -1,7 +1,7 @@
 import {
   DO_LOGIN,
   DO_DISCONNECT,
-  FETCH_RESOURCES,
+  ADD_FETCHED_RESOURCES,
   LEAVE_QUEUE,
   JOIN_QUEUE,
   CREATE_QUEUE,
@@ -9,6 +9,7 @@ import {
   JOIN_RESOURCE,
   SKIP_RESOURCE,
   MARK_RESOURCE_AS_PROCESSED,
+  UPDATE_QUEUE_REMAINING_ITEMS,
 } from './constants';
 
 export function login(payload) {
@@ -18,41 +19,40 @@ export function login(payload) {
   }
 }
 
-export function disconnect(payload) {
+export function disconnect(socketId) {
   return {
     type: DO_DISCONNECT,
-    payload,
+    payload: { socketId },
   };
 }
 
-export function fetchResources(payload) {
+export function addFetchedResources(payload) {
   return {
-    type: FETCH_RESOURCES,
+    type: ADD_FETCHED_RESOURCES,
     payload,
   };
 }
 
-export function leaveQueue(payload) {
+export function leaveQueue(socketId) {
   return {
     type: LEAVE_QUEUE,
-    payload,
+    payload: { socketId },
   };
 }
 
-export function joinQueue(payload) {
+export function joinQueue(socketId, queueId) {
   return {
     type: JOIN_QUEUE,
-    payload,
+    payload: { socketId, queueId },
   };
 }
 
-export function createQueue(name, resources) {
+export function createQueue(id, resources) {
   return {
     type: CREATE_QUEUE,
     payload: {
-      id: name,
+      id,
       type: 'custom',
-      name,
       resources,
       remainingItems: resources.length,
       processors: [],
@@ -60,30 +60,37 @@ export function createQueue(name, resources) {
   };
 }
 
-export function leaveResource(payload) {
+export function leaveResource(socketId) {
   return {
     type: LEAVE_RESOURCE,
-    payload,
+    payload: { socketId },
   };
 }
 
-export function joinResource(payload) {
+export function joinResource(socketId, resourceId) {
   return {
     type: JOIN_RESOURCE,
-    payload,
+    payload: { socketId, resourceId },
   };
 }
 
-export function skipResource(payload) {
+export function skipResource(socketId) {
   return {
     type: SKIP_RESOURCE,
-    payload,
+    payload: { socketId },
   };
 }
 
-export function markResourceAsProcessed(payload) {
+export function markResourceAsProcessed(socketId) {
   return {
     type: MARK_RESOURCE_AS_PROCESSED,
-    payload,
+    payload: { socketId },
+  };
+}
+
+export function updateQueueRemainingItem(queueId, remainingItems) {
+  return {
+    type: UPDATE_QUEUE_REMAINING_ITEMS,
+    payload: { queueId, remainingItems },
   };
 }

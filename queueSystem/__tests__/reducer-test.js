@@ -287,7 +287,7 @@ describe('app reducer', () => {
     });
   });
 
-  describe('FETCH_RESOURCES', () => {
+  describe('ADD_FETCHED_RESOURCES', () => {
     const initialState = reducer(intermediateState, {});
     let state = initialState;
 
@@ -306,7 +306,7 @@ describe('app reducer', () => {
     };
 
     beforeEach(() => {
-      state = reducer(state, { type: types.FETCH_RESOURCES, payload: data })
+      state = reducer(state, { type: types.ADD_FETCHED_RESOURCES, payload: data })
     });
 
     afterEach(() => {

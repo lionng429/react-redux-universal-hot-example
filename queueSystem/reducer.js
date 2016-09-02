@@ -2,7 +2,7 @@ import { nativeQueues } from './constants';
 import {
   DO_LOGIN,
   DO_DISCONNECT,
-  FETCH_RESOURCES,
+  ADD_FETCHED_RESOURCES,
   LEAVE_QUEUE,
   JOIN_QUEUE,
   CREATE_QUEUE,
@@ -10,6 +10,7 @@ import {
   JOIN_RESOURCE,
   SKIP_RESOURCE,
   MARK_RESOURCE_AS_PROCESSED,
+  UPDATE_QUEUE_REMAINING_ITEMS,
 } from './constants';
 
 export const initialState = {
@@ -68,7 +69,7 @@ export default function app(state = initialState, action = {}) {
         resources: state.queues.find(queue => queue.type === data.type && queue.id === data.id) ? state.resources : state.resources.concat(data.resources),
       };
 
-    case FETCH_RESOURCES:
+    case ADD_FETCHED_RESOURCES:
       return {
         ...state,
         queues: state.queues.map(queue => !data.remainingItems.hasOwnProperty(queue.id) ? queue : Object.assign({}, queue, { remainingItems: data.remainingItems[queue.id] })),
@@ -114,6 +115,12 @@ export default function app(state = initialState, action = {}) {
             resourceId: user.resourceId,
           }]) :
           state.processedResources,
+      };
+
+    case UPDATE_QUEUE_REMAINING_ITEMS:
+      return {
+        ...state,
+        queues: state.queues.map(queue => queue.id !== data.queueId ? queue : Object.assign({}, queue, { remainingItems: data.remainingItems })),
       };
 
     case DO_DISCONNECT:

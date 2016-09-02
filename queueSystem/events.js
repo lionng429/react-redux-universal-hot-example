@@ -18,6 +18,5 @@ export const ASSIGN_RESOURCE = 'assign resource';
 export const GET_NEXT_RESOURCE = 'get next resource';
 export const SKIP_RESOURCE = 'skip resource';
 export const REFRESH_RESOURCE = 'refresh resource';
-export const FETCH_RESOURCES = 'fetch resource';
 export const MARK_RESOURCE_AS_PROCESSED = 'mark resource as processed';
 export const ERROR = 'ERROR';
