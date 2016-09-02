@@ -95,7 +95,7 @@ export default class AdminContainer extends Component {
 
   handleCreateQueue() {
     const { socket } = global;
-    const { params: { type: queueType }, queueName, query } = this.props;
+    const { queueName, query: { queueType, ...query } } = this.props;
 
     socket.emit(CREATE_CUSTOM_QUEUE, {
       type: queueType,
