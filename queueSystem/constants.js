@@ -1,3 +1,4 @@
+export const ADD_CLIENT = 'ADD_CLIENT';
 export const DO_LOGIN = 'DO_LOGIN';
 export const DO_DISCONNECT = 'DO_DISCONNECT';
 export const ADD_FETCHED_RESOURCES = 'ADD_FETCHED_RESOURCES';

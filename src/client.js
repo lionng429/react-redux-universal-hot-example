@@ -21,6 +21,7 @@ const dest = document.getElementById('content');
 const store = createStore(_browserHistory, client, window.__data);
 const history = syncHistoryWithStore(_browserHistory, store);
 
+import { CONNECT_QUEUE_SYSTEM, DISCONNECT_QUEUE_SYSTEM } from './redux/modules/queueSystem';
 import { CONNECT_LOCK_SYSTEM, DISCONNECT_LOCK_SYSTEM } from './redux/modules/lockSystem';
 
 function initSocket() {
@@ -32,6 +33,9 @@ function initSocket() {
 
   global.socket = socket;
   global.lockSysSocket = lockSysSocket;
+
+  socket.on('connect', () => { store.dispatch({ type: CONNECT_QUEUE_SYSTEM, payload: { socketId: socket.io.engine.id } }); });
+  socket.on('disconnect', () => { store.dispatch({ type: DISCONNECT_QUEUE_SYSTEM }); });
 
   lockSysSocket.on('connect', () => { store.dispatch({ type: CONNECT_LOCK_SYSTEM, payload: { socketId: lockSysSocket.io.engine.id } }); });
   lockSysSocket.on('disconnect', () => { store.dispatch({ type: DISCONNECT_LOCK_SYSTEM }); });

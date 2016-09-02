@@ -4,9 +4,9 @@ import * as types from '../constants';
 import { nativeQueues } from '../constants';
 
 describe('app reducer', () => {
-  const existingUser = { socketId: 'a123', id: 1, name: 'existing user', queueId: null, resourceId: null };
-  const newUser = { socketId: 'a234', id: 2, name: 'new user' };
-  const invalidUser = { id: 2, name: 'invalid user' };
+  const existingUser = { socketId: 'a123', username: 'existing user', queueId: null, resourceId: null };
+  const newUser = { socketId: 'a234', username: 'new user' };
+  const invalidUser = { username: 'invalid user' };
   const queue = nativeQueues[0];
   const newQueue = { identifier: 'new_enquiries', type: 'native' };
   const existingResource = { id: '01234-56789', name: 'existing resource', queueId: queue.identifier, watchers: [] };
@@ -36,17 +36,16 @@ describe('app reducer', () => {
     ).to.equal(intermediateState);
   });
 
-  describe('DO_LOGIN', () => {
+  describe('ADD_CLIENT', () => {
     it('should append the new user object to state.clients array', () => {
       const initialState = reducer(intermediateState, {});
 
-      const state = reducer(initialState, { type: types.DO_LOGIN, payload: newUser });
+      const state = reducer(initialState, { type: types.ADD_CLIENT, payload: newUser });
       const stateClients = state.clients;
       const loggedInUser = stateClients[(stateClients.length - 1)];
 
       expect(stateClients).to.have.lengthOf(initialState.clients.length + 1);
-      expect(loggedInUser).to.have.property('id', newUser.id);
-      expect(loggedInUser).to.have.property('name', newUser.name);
+      expect(loggedInUser).to.have.property('name', newUser.username);
       expect(loggedInUser).to.have.property('queueId', null);
       expect(loggedInUser).to.have.property('resourceId', null);
       expect(loggedInUser).to.have.property('socketId', newUser.socketId);
@@ -55,7 +54,7 @@ describe('app reducer', () => {
     it('should not append the new user object with `socketId` property to state.clients array', () => {
       const initialState = reducer(intermediateState, {});
 
-      const state = reducer(intermediateState, { type: types.DO_LOGIN, payload: invalidUser });
+      const state = reducer(intermediateState, { type: types.ADD_CLIENT, payload: invalidUser });
       const stateClients = state.clients;
 
       expect(stateClients).to.have.lengthOf(initialState.clients.length);

@@ -1,6 +1,6 @@
 import { nativeQueues } from './constants';
 import {
-  DO_LOGIN,
+  ADD_CLIENT,
   DO_DISCONNECT,
   ADD_FETCHED_RESOURCES,
   LEAVE_QUEUE,
@@ -30,13 +30,12 @@ export default function app(state = initialState, action = {}) {
   const user = Object.assign({}, state.clients.find(client => client.socketId === data.socketId));
 
   switch (action.type) {
-    case DO_LOGIN:
+    case ADD_CLIENT:
       return {
         ...state,
         clients: !data.socketId ? state.clients : state.clients.concat([{
           socketId: data.socketId,
-          id: data.id,
-          name: data.name,
+          name: data.username,
           queueId: null,
           resourceId: null,
         }]),

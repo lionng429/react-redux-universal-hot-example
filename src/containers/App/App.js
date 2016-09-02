@@ -13,6 +13,8 @@ import config from '../../config';
 import { asyncConnect } from 'redux-async-connect';
 import { Toolbar } from '../index';
 import io from 'socket.io-client';
+import * as dashboardActions from '../../redux/modules/dashboard';
+import { CONNECT_QUEUE_SYSTEM, DISCONNECT_QUEUE_SYSTEM } from '../../redux/modules/queueSystem';
 import { CONNECT_LOCK_SYSTEM, DISCONNECT_LOCK_SYSTEM } from '../../redux/modules/lockSystem';
 
 @asyncConnect([{
@@ -31,14 +33,19 @@ import { CONNECT_LOCK_SYSTEM, DISCONNECT_LOCK_SYSTEM } from '../../redux/modules
 }])
 @connect(
   state => ({user: state.auth.user}),
-  {logout, pushState: push})
+  {
+    logout,
+    pushState: push,
+    resetDashboard: dashboardActions.resetDashboard,
+  })
 export default class App extends Component {
   static propTypes = {
     location: PropTypes.object.isRequired,
     children: PropTypes.object.isRequired,
     user: PropTypes.object,
     logout: PropTypes.func.isRequired,
-    pushState: PropTypes.func.isRequired
+    pushState: PropTypes.func.isRequired,
+    resetDashboard: PropTypes.func.isRequired,
   };
 
   static contextTypes = {
@@ -52,12 +59,21 @@ export default class App extends Component {
 
       // TODO: see if this could be unify with initSocket in client.js
       // re-establish the socket connection upon login
+      global.socket = io('', Object.assign({ path: '/ws/queue', forceNew: true }, user && { query: { username: user.name } }));
+      global.socket.on('connect', () => { this.context.store.dispatch({ type: CONNECT_QUEUE_SYSTEM, payload: { socketId: global.lockSysSocket.io.engine.id } }); });
+      global.socket.on('disconnect', () => { this.context.store.dispatch({ type: DISCONNECT_QUEUE_SYSTEM }); });
+
       global.lockSysSocket = io('', Object.assign({ path: '/ws/lock', forceNew: true }, user && { query: { username: user.name } }));
       global.lockSysSocket.on('connect', () => { this.context.store.dispatch({ type: CONNECT_LOCK_SYSTEM, payload: { socketId: global.lockSysSocket.io.engine.id } }); });
       global.lockSysSocket.on('disconnect', () => { this.context.store.dispatch({ type: DISCONNECT_LOCK_SYSTEM }); });
+
       this.props.pushState('/loginSuccess');
     } else if (this.props.user && !nextProps.user) {
+      global.socket.disconnect();
+      global.lockSysSocket.disconnect();
+
       // logout
+      this.props.resetDashboard();
       this.props.pushState('/');
     }
   }
@@ -117,7 +133,7 @@ export default class App extends Component {
           {this.props.children}
         </div>
 
-        <Toolbar onResourcePage={onResourcePage} />
+        {user && <Toolbar onResourcePage={onResourcePage} />}
       </div>
     );
   }

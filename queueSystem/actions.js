@@ -1,4 +1,5 @@
 import {
+  ADD_CLIENT,
   DO_LOGIN,
   DO_DISCONNECT,
   ADD_FETCHED_RESOURCES,
@@ -12,11 +13,15 @@ import {
   UPDATE_QUEUE_REMAINING_ITEMS,
 } from './constants';
 
-export function login(payload) {
+export function addClient(userData) {
   return {
-    type: DO_LOGIN,
-    payload,
-  }
+    type: ADD_CLIENT,
+    payload: {
+      socketId: userData.socketId,
+      username: userData.username,
+      resourceId: null,
+    },
+  };
 }
 
 export function disconnect(socketId) {

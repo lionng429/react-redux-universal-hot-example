@@ -22,7 +22,6 @@ import {
   MARK_RESOURCE_AS_PROCESSED,
   CONNECTION,
   DISCONNECT,
-  LOGIN,
   ERROR,
 } from './events';
 
@@ -237,19 +236,23 @@ export default io => {
     io.on(CONNECTION, socket => {
       const socketId = socket.conn.id;
       const ipAddr = socket.handshake.address;
+      const { cookie, userId, username } = socket.handshake.query;
 
       debug(`socket.io connection ID: ${socketId} established from ${ipAddr}`);
 
-      socket.on(LOGIN, (user = {}) => {
-        debug(`event '${LOGIN}' received from ${socketId}`);
+      // TODO:
+      // refine the needed data, e.g. cookie
+      if (!username) {
+        debug(`insufficient data from connection ID: ${socketId}`);
+        socket.disconnect();
+        return;
+      }
 
-        // verify the user via PHP API
+      // TODO:
+      // verify the cookie via API
+      // checkAuth(userData).then(addClient).catch(disconnectClient)
 
-        store.dispatch(actions.login({
-          socketId,
-          ...user,
-        }));
-      });
+      store.dispatch(actions.addClient({ socketId, username }));
 
       // on dashboard mounted,
       // user needs the queues data,

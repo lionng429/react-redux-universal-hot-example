@@ -9,7 +9,6 @@ export const JOIN_RESOURCE = 'join resource';
 export const LEAVE_RESOURCE = 'leave resource';
 export const CONNECTION = 'connection';
 export const DISCONNECT = 'disconnect';
-export const LOGIN = 'login';
 
 export const REFRESH_QUEUE = 'refresh queue';
 export const REFRESH_QUEUES = 'refresh queues';
